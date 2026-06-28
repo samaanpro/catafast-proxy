@@ -3,14 +3,21 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-const USER_DIR = path.join(__dirname, '..', 'user');
+function findUserDir() {
+  const candidates = [
+    path.join(__dirname, '..', 'user'),
+    path.join(process.cwd(), 'user'),
+    path.join(__dirname, '..', '..', 'user'),
+    path.join(__dirname, 'user'),
+  ];
+  for (const dir of candidates) {
+    if (fs.existsSync(path.join(dir, 'index.html'))) return dir;
+  }
+  return candidates[0];
+}
+const USER_DIR = findUserDir();
 const OBFUSCATION_KEY = 'C4t@f@st_GYM_S3cur3_K3y_2026!';
 const APP_SECRET_KEY = 'CatafastApp2026';
-
-function serveFile(res, filePath, mimeType) {
-  const content = fs.readFileSync(filePath);
-  res.type(mimeType).send(content);
-}
 
 // ======================== Security Middleware ========================
 app.use((req, res, next) => {
