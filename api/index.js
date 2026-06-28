@@ -26,11 +26,17 @@ app.use((req, res, next) => {
   }
   const ua = (req.headers['user-agent'] || '').toLowerCase();
   const key = req.headers['x-app-key'];
-  const allowed = key === APP_SECRET_KEY || /catafast|gymapp|katfast/.test(ua);
-  if (!allowed) {
-    return res.status(403).type('json').send(JSON.stringify({ error: 'Access Denied' }));
+  const referer = (req.headers['referer'] || '').toLowerCase();
+
+  const isBrowser = /mozilla|chrome|safari|edge|firefox|opr\//.test(ua);
+  const hasAppKey = key === APP_SECRET_KEY;
+  const isAppUA = /catafast|gymapp|katfast/.test(ua);
+  const isSameOrigin = referer.includes(req.hostname);
+
+  if (hasAppKey || isAppUA || isBrowser || isSameOrigin) {
+    return next();
   }
-  next();
+  return res.status(403).type('json').send(JSON.stringify({ error: 'Access Denied' }));
 });
 
 // ======================== JS Obfuscation Middleware ========================
@@ -194,18 +200,6 @@ self.addEventListener('message', function(e) {
 });
 `;
   res.type('application/javascript').send(sw);
-});
-
-// ======================== Debug ========================
-app.get('/__debug', (req, res) => {
-  res.json({
-    cwd: process.cwd(),
-    dirname: __dirname,
-    userDir: USER_DIR,
-    files: fs.existsSync(USER_DIR) ? fs.readdirSync(USER_DIR).slice(0, 30) : 'NOT_FOUND',
-    hasIndex: fs.existsSync(path.join(USER_DIR, 'index.html')),
-    node: process.version,
-  });
 });
 
 // ======================== Static Files ========================
