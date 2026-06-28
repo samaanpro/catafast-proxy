@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#059669">
+    <title id="userPageTitle" data-i18n="pageTitle">Catafast GYM | تطبيق المشتركين</title>
+    <link rel="preconnect" href="https://amqxrxpasxrhfwqyynsa.supabase.co">
+    <link rel="dns-prefetch" href="https://amqxrxpasxrhfwqyynsa.supabase.co">
+    <link rel="stylesheet" href="assets/fonts/google/fonts.css">
+    <link rel="stylesheet" href="assets/fonts/fontawesome/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="assets/supabase.umd.js"></script>
+    <script>if (typeof window.supabase === 'undefined') { document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\/script>'); }</script>
+    <script>if (location.protocol !== 'file:') { var m = document.createElement('link'); m.rel = 'manifest'; m.href = 'manifest.json'; document.head.appendChild(m); }</script>
+    <script>function showExerciseFallback(el){if(el&&el.parentElement)el.parentElement.innerHTML='<div style="font-size:60px;opacity:0.2;"><i class="fas fa-dumbbell"></i></div>';}</script>
+    <style>
+        :root{--star-empty:rgba(255,255,255,0.15)}
+        body.light-mode{--star-empty:rgba(0,0,0,0.2)}
+        #appContainer{padding-top:70px}
+        @media(min-width:600px){#appContainer{padding-top:80px}}
+
+        /* Layout */
+        .main-content{padding:70px 16px max(90px,calc(68px + env(safe-area-inset-bottom) + 16px));max-width:700px;margin:0 auto}
+        .page{display:none}
+        .page.active{display:block}
+
+        /* Login */
+        body:not(.boot-ready) #loginScreen,
+        body:not(.boot-ready) #appContainer{
+            opacity:0;
+            visibility:hidden;
+            pointer-events:none;
+        }
+        body.boot-ready #loginScreen,
+        body.boot-ready #appContainer{
+            transition:opacity .25s ease, visibility .25s ease;
+        }
+        #loginScreen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;background:var(--bg)}
+        #bootSplash{position:fixed;inset:0;z-index:4000;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(circle at top,rgba(255,255,255,.08),transparent 32%),linear-gradient(145deg,#1b0f0a 0%,#2e150c 38%,#5c2d13 100%);color:#fff;transition:opacity .28s ease,transform .28s ease}
+        #bootSplash.hide{opacity:0;pointer-events:none;transform:scale(1.01)}
+        .boot-splash-card{width:min(560px,100%);border-radius:28px;padding:24px;background:rgba(10,10,10,.34);border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(18px);box-shadow:0 24px 70px rgba(0,0,0,.35);text-align:center}
+        .boot-splash-icon{width:72px;height:72px;border-radius:22px;margin:0 auto 14px;background:linear-gradient(135deg,#ff7a18,#ff3d1f);display:flex;align-items:center;justify-content:center;font-size:30px;box-shadow:0 10px 30px rgba(255,88,28,.28)}
+        .boot-splash-title{font-size:26px;font-weight:900;line-height:1.15;margin-bottom:8px}
+        .boot-splash-sub{font-size:13px;line-height:1.8;color:rgba(255,255,255,.76);max-width:40ch;margin:0 auto 18px}
+        .boot-splash-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:18px}
+        .boot-splash-pill{padding:7px 12px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.08);font-size:11px;font-weight:700}
+        .boot-splash-spinner{display:inline-flex;gap:6px;align-items:center;justify-content:center}
+        .boot-splash-spinner span{width:9px;height:9px;border-radius:50%;background:#ff8a4c;animation:bootDot 1s infinite ease-in-out}
+        .boot-splash-spinner span:nth-child(2){animation-delay:.15s}
+        .boot-splash-spinner span:nth-child(3){animation-delay:.3s}
+        @keyframes bootDot{0%,80%,100%{transform:translateY(0);opacity:.45}40%{transform:translateY(-6px);opacity:1}}
+
+        .field{margin-bottom:16px;text-align:right}
+        .field label{display:block;font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:7px}
+        .field label i{color:var(--primary);margin-left:5px}
+        .field input{width:100%;padding:14px 16px;background:var(--input-bg);border:2px solid var(--line);border-radius:12px;color:var(--ink);font-family:var(--font-main);font-size:15px;transition:var(--transition-fast);min-height:48px}
+        .field input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 4px rgba(5,150,105,0.12)}
+
+        .btn-login{width:100%;padding:14px;background:var(--primary-gradient);border:none;border-radius:12px;color:#fff;font-family:var(--font-main);font-size:16px;font-weight:800;cursor:pointer;transition:var(--transition-normal);margin-top:4px;box-shadow:0 8px 24px var(--primary-glow)}
+        .btn-login:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(5,150,105,0.4)}
+        .btn-login:disabled{opacity:.6;cursor:not-allowed;transform:none}
+
+        .login-logo{text-align:center;margin-bottom:28px}
+        .login-logo .icon{width:72px;height:72px;background:var(--grad-b);border-radius:18px;display:inline-flex;align-items:center;justify-content:center;font-size:32px;color:#fff;margin-bottom:12px;box-shadow:0 0 30px var(--gold-glow)}
+        .login-logo h1{font-size:26px;font-weight:900;background:var(--grad-a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-0.5px}
+        .login-logo p{color:var(--ink-3);font-size:13px;margin-top:4px}
+
+        .back-link{display:block;text-align:center;margin-top:14px;color:var(--ink-3);text-decoration:none;font-size:13px;transition:var(--transition-fast)}
+        .back-link:hover{color:var(--primary)}
+
+        /* App Header */
+        #appContainer{display:none}
+        .app-header{position:fixed;top:0;left:0;right:0;z-index:100;background:var(--nav-bg);backdrop-filter:var(--glass-blur);border-bottom:1px solid var(--line);height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;gap:10px}
+        .app-logo{font-size:17px;font-weight:900;background:var(--grad-b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap;letter-spacing:-0.3px}
+
+        .sub-badge{display:flex;align-items:center;gap:5px;padding:5px 10px;background:var(--badge-active-bg);border:1px solid var(--badge-active-border);border-radius:20px;font-size:12px;font-weight:700;color:var(--accent);white-space:nowrap}
+        @media(max-width:599px){
+            .app-header{gap:4px;padding:0 8px}
+            #syncBadge,
+            .app-header .sub-badge:last-child{display:none!important}
+        }
+
+        .logout-btn{padding:7px 14px;background:var(--danger-glow);border:1px solid rgba(220,38,38,0.3);border-radius:10px;color:var(--danger);cursor:pointer;font-size:13px;transition:var(--transition-fast);font-family:var(--font-main)}
+        .logout-btn:hover{background:var(--danger);color:#fff}
+
+        .sync-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:12px;font-size:10px;font-weight:700;cursor:pointer;transition:var(--transition-fast);white-space:nowrap;border:1px solid transparent}
+        .sync-badge.idle{background:rgba(34,197,94,0.1);border-color:rgba(34,197,94,0.2);color:var(--success)}
+        .sync-badge.pending{background:rgba(234,179,8,0.1);border-color:rgba(234,179,8,0.25);color:var(--warning)}
+        .sync-badge.syncing{background:rgba(14,165,233,0.1);border-color:rgba(14,165,233,0.25);color:var(--cyan)}
+        .sync-badge.error{background:var(--danger-glow);border-color:rgba(220,38,38,0.25);color:var(--danger)}
+        .sync-badge .count{background:rgba(255,255,255,0.15);border-radius:8px;padding:0 5px;font-size:9px;min-width:16px;text-align:center}
+        .sync-badge .spin{animation:syncSpin 1s linear infinite;display:inline-block}
+        @keyframes syncSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+        /* Bottom Nav */
+        .bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:100;background:var(--nav-bg);backdrop-filter:var(--glass-blur);border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:8px 0 max(8px,env(safe-area-inset-bottom))}
+        /* Mobile Zoom Bar (above bottom nav) */
+        .nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 20px;border:none;background:transparent;color:var(--ink-3);cursor:pointer;font-family:var(--font-main);font-size:10px;transition:var(--transition-normal);border-radius:10px}
+        .nav-item i{font-size:20px}
+        .nav-item.active{color:var(--primary)}
+        .nav-item.active i{filter:drop-shadow(0 0 8px var(--primary-glow))}
+
+        /* User Card */
+        .user-card{display:flex;align-items:center;gap:14px}
+        .user-avatar{width:54px;height:54px;background:var(--primary-gradient);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;flex-shrink:0;box-shadow:0 0 20px var(--primary-glow)}
+        .user-name{font-size:18px;font-weight:800}
+        .user-days{font-size:13px;color:var(--ink-3);margin-top:3px}
+
+        /* Tips */
+        .tips-card{background:var(--glass-bg);backdrop-filter:var(--glass-blur);border:1px solid var(--glass-border);border-radius:20px;padding:20px;margin-bottom:16px}
+        .tips-card h3{font-size:15px;font-weight:700;color:var(--primary);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+
+        .home-showcase{display:grid;grid-template-columns:1.35fr .95fr;gap:14px;align-items:stretch;margin-bottom:16px}
+        .home-hero-panel{position:relative;min-height:410px;border-radius:28px;overflow:hidden;background:radial-gradient(circle at 72% 20%,rgba(255,172,92,.22),transparent 24%),linear-gradient(145deg,#2b140c 0%,#341a10 40%,#6b2d11 100%);border:1px solid rgba(255,255,255,.07);box-shadow:0 24px 70px rgba(0,0,0,.26)}
+        .home-hero-panel::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.1),rgba(0,0,0,.42));pointer-events:none}
+        .home-hero-panel::after{content:'';position:absolute;inset:auto -14% -30% 34%;height:58%;background:radial-gradient(circle,rgba(255,106,31,.44),rgba(255,106,31,0) 65%);filter:blur(16px);pointer-events:none}
+        .home-hero-rail{position:absolute;top:16px;left:16px;right:16px;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-radius:20px;background:rgba(15,10,8,.52);border:1px solid rgba(255,255,255,.08);backdrop-filter:blur(14px)}
+        .home-hero-brand{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:900;color:#fff}
+        .home-hero-brand .brand-mark{width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#ff8a34,#ff4727);box-shadow:0 8px 20px rgba(255,104,35,.26)}
+        .home-hero-pills{display:flex;gap:6px;flex-wrap:wrap}
+        .home-hero-pill{padding:7px 12px;border-radius:999px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.9);font-size:11px;font-weight:700;border:1px solid rgba(255,255,255,.08)}
+        .home-hero-content{position:absolute;inset:86px 24px 22px 24px;z-index:1;display:flex;flex-direction:column;justify-content:space-between}
+        .home-hero-copy{max-width:55%}
+        .home-hero-kicker{font-size:11px;font-weight:900;letter-spacing:.08em;color:#ffb37b;margin-bottom:10px}
+        .home-hero-copy h3{font-size:clamp(28px,4vw,48px);font-weight:900;color:#fff;line-height:1.03;margin-bottom:14px}
+        .home-hero-copy p{font-size:13px;color:rgba(255,255,255,.8);line-height:1.85;max-width:36ch;margin-bottom:18px}
+        .home-hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+        .home-hero-btn{display:inline-flex;align-items:center;gap:10px;padding:12px 20px;border-radius:999px;font-size:14px;font-weight:800;border:none;cursor:pointer;transition:transform .2s ease,box-shadow .2s ease}
+        .home-hero-btn.primary{background:linear-gradient(135deg,#ff7a18,#ff421f);color:#fff;box-shadow:0 14px 32px rgba(255,92,31,.25)}
+        .home-hero-btn.secondary{background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.1)}
+        .home-hero-btn:hover{transform:translateY(-1px)}
+        .home-hero-social{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+        .home-hero-avatars{display:flex;align-items:center}
+        .home-hero-avatar{width:34px;height:34px;border-radius:50%;border:2px solid rgba(255,255,255,.28);margin-inline-start:-8px;object-fit:cover;background:#1f2937}
+        .home-hero-avatar:first-child{margin-inline-start:0}
+        .home-hero-rating{display:flex;flex-direction:column;gap:2px}
+        .home-hero-rating .stars{font-size:11px;color:#ffcb6b}
+        .home-hero-rating .count{font-size:11px;color:rgba(255,255,255,.65)}
+        .home-chip-row{display:flex;flex-wrap:wrap;gap:8px}
+        .home-chip{padding:7px 12px;border-radius:999px;font-size:10px;font-weight:800;background:rgba(255,255,255,.09);color:#fff;border:1px solid rgba(255,255,255,.1)}
+        .home-stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px;max-width:520px}
+        .home-stat{padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);color:#fff;backdrop-filter:blur(10px)}
+        .home-stat .label{font-size:10px;opacity:.75;margin-bottom:3px}
+        .home-stat .value{font-size:15px;font-weight:900;line-height:1.2}
+        .home-hero-figure{position:absolute;right:0;bottom:0;width:min(50%,310px);height:100%;display:flex;align-items:flex-end;justify-content:flex-end;pointer-events:none}
+        .home-hero-figure img{width:100%;height:100%;object-fit:cover;object-position:top center;filter:drop-shadow(0 28px 32px rgba(0,0,0,.42));transform:scale(1.02)}
+        .home-side-stack{display:grid;grid-template-rows:repeat(2,1fr);gap:14px}
+        .home-mini-card{position:relative;min-height:198px;border-radius:22px;overflow:hidden;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);box-shadow:0 12px 30px rgba(0,0,0,.12)}
+        .home-mini-card img{width:100%;height:100%;object-fit:cover;display:block}
+        .home-mini-card .overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,10,10,.12),rgba(10,10,10,.82))}
+        .home-mini-card .txt{position:absolute;inset:auto 0 0 0;padding:16px 16px 14px;z-index:1}
+        .home-mini-card h4{font-size:16px;font-weight:900;color:#fff;margin:0 0 6px}
+        .home-mini-card p{font-size:11px;color:rgba(255,255,255,.78);line-height:1.7}
+        .home-advice-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+        .home-advice{position:relative;overflow:hidden;border-radius:18px;padding:14px;background:var(--glass-bg);border:1px solid var(--glass-border);min-height:156px;box-shadow:0 10px 26px rgba(0,0,0,.08)}
+        .home-advice img {
+            width: 100%;
+            height: 240px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-bottom: 10px;
+        }
+        .home-advice h4{font-size:13px;font-weight:800;margin-bottom:6px;color:var(--ink)}
+        .home-advice p{font-size:11px;line-height:1.7;color:var(--ink-2)}
+        .home-advice .tag{display:inline-flex;align-items:center;gap:6px;margin-bottom:8px;font-size:10px;font-weight:800;color:var(--primary)}
+        .tip-card{display:grid;grid-template-columns:92px 1fr;gap:12px;padding:10px;margin-bottom:12px;overflow:hidden}
+        .tip-card-media{border-radius:14px;overflow:hidden;min-height:92px;background:rgba(255,255,255,.04)}
+        .tip-card-media img{width:100%;height:100%;object-fit:cover;display:block}
+        .tip-card-body{display:flex;flex-direction:column;justify-content:center;padding:4px 2px 4px 0}
+        .tip-card-icon{width:34px;height:34px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;background:rgba(5,150,105,.1);color:var(--primary);margin-bottom:8px;font-size:14px}
+        .tip-card-title{font-size:14px;font-weight:900;color:var(--ink);margin-bottom:6px;line-height:1.3}
+        .tip-card-text{font-size:11px;line-height:1.8;color:var(--ink-2)}
+        .tip-card:hover{transform:translateY(-2px)}
+        @media(max-width:800px){
+            .home-showcase,.home-advice-grid{grid-template-columns:1fr}
+            .home-side-stack{grid-template-columns:1fr 1fr;grid-template-rows:none}
+            .home-hero-panel{min-height:520px}
+            .home-hero-copy{max-width:100%}
+            .home-hero-figure{width:52%;opacity:.96}
+            .tip-card{grid-template-columns:82px 1fr}
+        }
+        @media(max-width:520px){
+            .home-side-stack{grid-template-columns:1fr}
+            .home-hero-panel{min-height:560px}
+            .home-hero-content{inset:82px 16px 16px 16px}
+            .home-hero-copy h3{font-size:30px}
+            .home-hero-actions{gap:8px}
+            .home-hero-btn{width:100%;justify-content:center}
+            .home-stat-row{grid-template-columns:1fr;max-width:100%}
+            .home-hero-figure{width:62%;opacity:.92}
+            .tip-card{grid-template-columns:1fr}
+            .tip-card-media{min-height:150px}
+        }
+
+        /* Progress Bar */
+        .progress-bar{background:var(--line);border-radius:20px;height:8px;overflow:hidden;margin-top:10px}
+        .progress-fill{height:100%;background:var(--primary-gradient);border-radius:20px;transition:width .6s cubic-bezier(0.34,1.56,0.64,1)}
+
+        /* Schedule Tabs */
+        .schedule-tabs{display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px}
+        .tab-btn{padding:9px 18px;border:1px solid var(--line);border-radius:20px;background:transparent;color:var(--ink-3);font-family:var(--font-main);font-size:13px;cursor:pointer;white-space:nowrap;transition:var(--transition-fast)}
+        .tab-btn.active{background:rgba(5,150,105,0.15);border-color:var(--primary);color:var(--primary)}
+        .schedule-content{display:none}
+        .schedule-content.active{display:block}
+
+        .workout-card{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:16px;padding:16px;margin-bottom:12px}
+        .workout-card h4{font-size:15px;font-weight:800;color:var(--primary);margin-bottom:10px}
+        .exercise-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line-2)}
+        .exercise-item:last-child{border-bottom:none}
+        .exercise-num{width:26px;height:26px;background:rgba(5,150,105,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--primary);flex-shrink:0}
+        .exercise-name{flex:1;font-size:13px}
+        .workout-day-accordion > summary{list-style:none}
+        .workout-day-accordion > summary::-webkit-details-marker{display:none}
+        .workout-day-accordion[open]{box-shadow:0 12px 34px rgba(0,0,0,0.12)}
+        .check-btn{width:28px;height:28px;border-radius:8px;border:2px solid var(--ink-4);background:transparent;color:var(--ink-3);cursor:pointer;transition:var(--transition-fast);font-size:12px}
+        .exercise-item.completed .check-btn{background:var(--success);border-color:var(--success);color:#fff}
+        .exercise-item.completed .exercise-name{text-decoration:line-through;opacity:.5}
+
+        .empty-state{text-align:center;padding:40px 20px;color:var(--ink-4)}
+        .empty-state i{font-size:48px;margin-bottom:12px;display:block;opacity:.3}
+
+        .btn-primary{padding:12px 24px;background:var(--primary-gradient);border:none;border-radius:12px;color:#fff;font-family:var(--font-main);font-size:14px;font-weight:700;cursor:pointer;transition:var(--transition-normal);box-shadow:0 6px 20px var(--primary-glow)}
+        .btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(5,150,105,0.4)}
+
+        /* Share */
+        .share-btn{display:flex;align-items:center;gap:6px;padding:9px 16px;background:rgba(14,165,233,0.12);border:1px solid rgba(14,165,233,0.3);border-radius:10px;color:var(--cyan);font-family:var(--font-main);font-size:13px;cursor:pointer;margin-top:10px;transition:var(--transition-fast)}
+        .share-btn:hover{background:var(--cyan);color:#fff}
+
+        /* Custom Form */
+        .custom-form{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:16px;padding:16px;margin-top:12px}
+        .custom-form input,.custom-form textarea{width:100%;padding:10px 12px;background:var(--input-bg);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-family:var(--font-main);font-size:13px;margin-bottom:10px}
+        .custom-form textarea{resize:vertical;height:100px}
+
+        /* Progress */
+        #progressPage{padding-bottom:20px}
+        .progress-photo-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:16px}
+        .photo-item{aspect-ratio:3/4;border-radius:14px;overflow:hidden;position:relative;background:rgba(255,255,255,0.05);border:1px solid var(--glass-border)}
+        .photo-item img{width:100%;height:100%;object-fit:cover}
+        .photo-date{position:absolute;bottom:0;left:0;right:0;padding:8px;background:linear-gradient(transparent,rgba(0,0,0,0.8));font-size:11px;color:var(--ink-3)}
+
+        /* Desktop */
+        @media(min-width:600px){
+            .main-content{padding-top:80px}
+            .bottom-nav{display:none}
+            .desktop-nav{display:flex!important}
+        }
+        .desktop-nav{display:none;gap:6px}
+        .desktop-nav button{padding:7px 16px;border:none;border-radius:8px;background:transparent;color:var(--ink-3);font-family:var(--font-main);font-size:13px;cursor:pointer;transition:var(--transition-fast)}
+        .desktop-nav button.active,.desktop-nav button:hover{background:rgba(5,150,105,0.15);color:var(--primary)}
+        .page-footer{padding:14px 16px calc(18px + env(safe-area-inset-bottom));text-align:center;font-size:11px;line-height:1.6;color:rgba(255,255,255,0.38);direction:ltr}
+        .page-footer a{color:inherit;text-decoration:none}
+
+        #userExPickerGrid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
+    </style>
+    <style>
+        .captain-profile-layout{display:flex;flex-direction:column;gap:16px;align-items:center;}
+        .captain-profile-layout>div:last-child{width:100%;}
+        .captain-photo-wrap{width:160px;max-width:60%;border-radius:24px;overflow:hidden;background:linear-gradient(135deg,rgba(5,150,105,0.18),rgba(14,165,233,0.18));border:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;}
+        .captain-photo-wrap img{display:block;width:100%;height:auto;border-radius:24px;}
+        @media(min-width:600px){.captain-profile-layout{flex-direction:row;align-items:center;}.captain-photo-wrap{width:140px;max-width:140px;flex-shrink:0;}}
+    </style>
+</head>
+<body>
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div id="bootSplash" aria-live="polite">
+    <div class="boot-splash-card">
+        <div class="boot-splash-icon"><i class="fas fa-dumbbell"></i></div>
+            <div class="boot-splash-title" id="userBootTitle">Catafast GYM</div>
+        <div class="boot-splash-sub" id="bootSplashText">جاري تجهيز الواجهة وتحميل بياناتك محليًا حتى لو الإنترنت غير متاح.</div>
+        <div class="boot-splash-row">
+            <span class="boot-splash-pill"><i class="fas fa-wifi"></i> <span id="bootSplashNet">Offline ready</span></span>
+            <span class="boot-splash-pill"><i class="fas fa-shield-alt"></i> <span id="bootSplashMode">User Mode</span></span>
+        </div>
+        <div class="boot-splash-spinner" aria-hidden="true"><span></span><span></span><span></span></div>
+    </div>
+</div>
+
+<!-- ===== Login ===== -->
+<div id="loginScreen">
+    <div class="login-card" style="max-width:400px;">
+        <div class="login-logo">
+            <div class="icon"><i class="fas fa-dumbbell"></i></div>
+            <h1 data-i18n="logo">Catafast GYM</h1>
+            <p data-i18n="loginSubtitle">منصة المشتركين الذكية</p>
+        </div>
+
+        <!-- Tips & Features -->
+        <div style="background:rgba(5,150,105,0.08);border:1px solid rgba(5,150,105,0.15);border-radius:12px;padding:10px 12px;margin-bottom:14px;">
+            <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:4px;"><i class="fas fa-lightbulb"></i> <span data-i18n="dailyTips">نصيحة اليوم</span></div>
+            <p style="font-size:11px;opacity:0.8;line-height:1.6;" id="userTip" data-i18n="tip1">التزم بتمارينك وسجل حضورك يومياً — كل جلسة بتقربك من هدفك.</p>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px;justify-content:center;">
+            <span style="font-size:10px;padding:3px 10px;background:rgba(5,150,105,0.1);border-radius:20px;color:var(--accent);"><i class="fas fa-calendar-alt"></i> <span data-i18n="schedules">جداول تدريب</span></span>
+            <span style="font-size:10px;padding:3px 10px;background:rgba(5,150,105,0.1);border-radius:20px;color:var(--accent);"><i class="fas fa-chart-line"></i> <span data-i18n="progress">تتبع التقدم</span></span>
+            <span style="font-size:10px;padding:3px 10px;background:rgba(5,150,105,0.1);border-radius:20px;color:var(--accent);"><i class="fas fa-camera"></i> <span data-i18n="photoLabel">صور تحول</span></span>
+            <span style="font-size:10px;padding:3px 10px;background:rgba(5,150,105,0.1);border-radius:20px;color:var(--accent);"><i class="fas fa-check-circle"></i> <span data-i18n="dailyAttendance">حضور يومي</span></span>
+        </div>
+
+        <!-- Dev Info -->
+            <div style="text-align:center;margin-bottom:14px;font-size:10px;opacity:0.35;line-height:1.6;" id="userDevInfo">
+                <i class="fas fa-code"></i> Catafast &nbsp;·&nbsp; <i class="fas fa-copyright"></i> 2026
+            </div>
+
+        <form id="loginForm">
+            <div class="field" style="margin-bottom:14px;">
+                <label data-i18n="email"><i class="fas fa-envelope"></i> البريد الإلكتروني</label>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <input type="text" id="userEmail" placeholder="yourname" required data-i18n-placeholder="emailPlaceholder" autocomplete="username" autocapitalize="none" spellcheck="false" style="flex:1;">
+                    <span style="padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);font-size:12px;font-weight:700;color:var(--ink-2);white-space:nowrap;direction:ltr;">@catafast.com</span>
+                </div>
+            </div>
+            <div class="field" style="margin-bottom:18px;">
+                <label data-i18n="password"><i class="fas fa-lock"></i> كلمة المرور / الكود الخاص</label>
+                <div style="position:relative;display:flex;align-items:center;">
+                    <input type="password" id="userPassword" placeholder="••••••••" required style="padding-inline-end:44px;" data-i18n-placeholder="passwordPlaceholder">
+                    <span onclick="togglePasswordVis('userPassword',this)" style="position:absolute;inset-inline-end:12px;cursor:pointer;color:var(--ink-3);font-size:16px;"><i class="fas fa-eye"></i></span>
+                </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+                <input type="checkbox" id="rememberAccount" style="width:16px;height:16px;accent-color:var(--primary);cursor:pointer;">
+                <label for="rememberAccount" style="font-size:13px;color:var(--ink-2);cursor:pointer;" data-i18n="rememberAccount">تذكر حسابي</label>
+            </div>
+            <button type="submit" class="btn-primary btn-full" id="loginBtn" data-i18n="loginBtn">
+                دخول المشترك <i class="fas fa-arrow-left"></i>
+            </button>
+        </form>
+                <span class="back-link" style="opacity:0.6;cursor:default;">Catafast GYM</span>
+    </div>
+</div>
+
+<!-- ===== Main App ===== -->
+<div id="appContainer">
+    <header class="app-header">
+        <span class="app-logo" data-i18n="logo">⚡ Catafast GYM</span>
+        <nav class="desktop-nav">
+            <button data-page="home" class="active" id="homeTabBtn"><i class="fas fa-home"></i> <span data-i18n="home">الرئيسية</span></button>
+            <button data-page="schedules" id="schedulesTabBtn"><i class="fas fa-calendar-alt"></i> <span data-i18n="schedules">الجداول</span></button>
+            <button data-page="progress" id="progressTabBtn"><i class="fas fa-chart-line"></i> <span data-i18n="progress">تقدمي</span></button>
+            <button data-page="tracking" id="trackingTabBtn"><i class="fas fa-weight"></i> <span data-i18n="tracking">الوزن</span></button>
+            <button data-page="challenges" id="challengesTabBtn"><i class="fas fa-trophy"></i> <span data-i18n="challenges">التحديات</span></button>
+            <button data-page="profile" id="profileTabBtn"><i class="fas fa-user-circle"></i> <span data-i18n="profile">حسابي</span></button>
+            <button data-page="about" id="aboutTabBtn"><i class="fas fa-id-card"></i> <span data-i18n="aboutCaptain">عن الكابتن</span></button>
+            <button onclick="openWhatsAppSmart('01063760246','السلام عليكم أود الاستفسار عن سعر تطبيق Catafast GYM ومميزاته')"><i class="fab fa-whatsapp" style="color:#25D366;"></i> <span data-i18n="whatsappLabel">واتساب</span></button>
+        </nav>
+        <div style="display:flex;align-items:center;gap:4px">
+            <button onclick="refreshCurrentPageData()" title="تحديث" style="background:rgba(255,255,255,0.05);border:1px solid var(--line);border-radius:8px;padding:6px 10px;color:var(--ink);cursor:pointer;font-size:14px;font-weight:700;line-height:1;"><i class="fas fa-sync-alt"></i></button>
+            <button class="theme-toggle-btn" id="userThemeToggle" onclick="toggleUserTheme()" style="background:rgba(255,255,255,0.05);border:1px solid var(--line);border-radius:8px;padding:6px 10px;color:var(--ink);cursor:pointer;font-size:14px;font-weight:700;line-height:1;"><i class="fas fa-sun"></i></button>
+            <span class="sync-badge idle" id="syncBadge" onclick="forceSync()" data-i18n-title="syncStatus"><i class="fas fa-cloud"></i> <span id="syncBadgeText" data-i18n="syncOnline">متصل</span></span>
+            <div class="sub-badge" id="notifBell" onclick="toggleNotifPanel()" style="position:relative;cursor:pointer;font-size:16px;padding:4px 8px;border-radius:8px;background:rgba(255,255,255,0.05);border:1px solid var(--line);">
+                <i class="fas fa-bell"></i>
+                <span id="notifBadge" style="position:absolute;top:-4px;right:-4px;background:#EF4444;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:10px;min-width:16px;text-align:center;display:none;">0</span>
+            </div>
+            <div id="headerAvatar" onclick="navigateTo('profile')" style="width:36px;height:36px;border-radius:50%;background:rgba(5,150,105,0.1);border:2px solid rgba(5,150,105,0.2);overflow:hidden;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">
+                <i class="fas fa-user" style="font-size:16px;color:var(--accent);"></i>
+            </div>
+            <div class="sub-badge"><i class="fas fa-crown"></i> <span id="headerDaysLeft">--</span> <span data-i18n="dayAbbrev">يوم</span></div>
+        </div>
+    </header>
+
+    <!-- Notifications Panel -->
+    <div id="notifPanel" style="display:none;position:fixed;top:60px;right:10px;width:360px;max-width:calc(100vw - 20px);max-height:72vh;background:rgba(8,12,20,0.94);border:1px solid rgba(255,255,255,0.12);border-radius:18px;z-index:999;overflow-y:auto;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:0 22px 60px rgba(0,0,0,0.45);">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg-card);z-index:1;">
+            <span style="font-weight:700;font-size:14px;" id="notifPanelTitle"><i class="fas fa-bell"></i> <span data-i18n="notifications">الإشعارات</span></span>
+            <button onclick="toggleNotifPanel()" style="background:none;border:none;color:var(--ink);cursor:pointer;font-size:18px;"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="notifList" style="padding:8px 0;">
+            <p style="text-align:center;opacity:0.5;font-size:13px;padding:20px;" data-i18n="noNotifs">لا توجد إشعارات</p>
+        </div>
+        <div style="padding:10px 16px;border-top:1px solid var(--line);text-align:center;">
+            <button onclick="markAllNotifsRead()" style="background:none;border:none;color:var(--primary);cursor:pointer;font-size:12px;font-family:var(--font-main);" data-i18n="markAllRead"><i class="fas fa-check-double"></i> تحديد الكل كمقروء</button>
+        </div>
+    </div>
+
+    <main class="main-content">
+
+        <!-- Home Page -->
+        <div class="page active" id="homePage">
+            <!-- User Card -->
+            <div class="glass-card user-card">
+                <div class="user-avatar"><i class="fas fa-user"></i></div>
+                <div>
+                    <div class="user-name" id="displayUserName" data-i18n="defaultUserName">اسم المشترك</div>
+                    <div class="user-days" id="displayDaysLeft" data-i18n="loading">جاري التحميل...</div>
+                    <div class="progress-bar" style="width:180px;margin-top:8px"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+                </div>
+            </div>
+
+                <div class="home-side-stack">
+                    <div class="home-mini-card">
+                        <img src="assets/exercises/gifs/3294-A9qxk2F.gif" alt="push training" loading="lazy">
+                        <div class="overlay"></div>
+                        <div class="txt">
+                            <h4>قوة وأداء</h4>
+                            <p>خلي كل تمرينة محسوبة. جودة الحركة أهم من عدد التكرارات.</p>
+                        </div>
+                    </div>
+                    <div class="home-mini-card">
+                        <img src="assets/exercises/gifs/3672-fNGumX0.gif" alt="cardio training" loading="lazy">
+                        <div class="overlay"></div>
+                        <div class="txt">
+                            <h4>تعافي ذكي</h4>
+                            <p>المياه، النوم، والبروتين بعد التمرين بيصنعوا الفرق الحقيقي.</p>
+                        </div>
+                    </div>
+                </div>
+
+            <div class="home-advice-grid">
+                <div class="home-advice">
+                    <div class="tag"><i class="fas fa-bolt"></i> نصيحة تمرين</div>
+                    <img src="assets/exercises/gifs/3671-5MRH8H2.gif" alt="gym advice" loading="lazy">
+                    <h4>ابدأ بالإحماء</h4>
+                    <p>5 إلى 10 دقائق حركة خفيفة قبل الحديد بتجهّز المفاصل وتقلل الإصابات، وبتخلي أول مجموعة أحسن بكتير.</p>
+                </div>
+                <div class="home-advice">
+                    <div class="tag"><i class="fas fa-apple-whole"></i> نصيحة أكل</div>
+                    <img src="assets/exercises/gifs/3545-TVdivgY.gif" alt="nutrition advice" loading="lazy">
+                    <h4>وجبة فيها توازن</h4>
+                    <p>حاول تجمع بروتين + كربوهيدرات + دهون صحية. جسمك محتاج وقود محترم علشان الأداء يكمل.</p>
+                </div>
+                <div class="home-advice">
+                    <div class="tag"><i class="fas fa-stopwatch"></i> نصيحة التزام</div>
+                    <img src="assets/exercises/gifs/3220-f9lVSSI.gif" alt="training consistency" loading="lazy">
+                    <h4>ثبات مش اندفاع</h4>
+                    <p>النتيجة اللي بتدوم هي نتيجة أسبوع ورا أسبوع. خليك حاضر حتى لو اليوم كان قصير.</p>
+                </div>
+            </div>
+
+            <!-- Weekly Summary Card -->
+            <div class="glass-card" style="margin-bottom:16px;">
+                <h3 style="color:var(--accent);margin-bottom:12px;font-size:15px;" data-i18n="weeklySummaryTitle"><i class="fas fa-chart-pie"></i> ملخص الأسبوع</h3>
+                <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;text-align:center;">
+                    <div style="background:rgba(255,255,255,0.05);padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);">
+                        <div id="wsSummaryWorkouts" style="font-size:20px;font-weight:900;color:var(--primary);">0</div>
+                        <div style="font-size:10px;opacity:0.6;margin-top:4px;" data-i18n="workoutLabel">تمرين</div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.05);padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);">
+                        <div id="wsSummaryPhotos" style="font-size:20px;font-weight:900;color:var(--cyan);">0</div>
+                        <div style="font-size:10px;opacity:0.6;margin-top:4px;" data-i18n="photoLabel">صورة</div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.05);padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);">
+                        <div id="wsSummaryWeight" style="font-size:20px;font-weight:900;color:var(--accent);direction:ltr;">--</div>
+                        <div style="font-size:10px;opacity:0.6;margin-top:4px;" data-i18n="weightChangeLabel">تغير الوزن</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Summary Card -->
+            <div class="glass-card" style="margin-bottom:16px;">
+                <h3 style="color:var(--accent);margin-bottom:12px;font-size:15px;" data-i18n="progressSummaryTitle"><i class="fas fa-running"></i> ملخص الإنجاز</h3>
+                <div style="display:flex;flex-direction:column;gap:10px;font-size:13px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.03);padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.05);">
+                        <span style="opacity:0.7;" data-i18n="lastWorkoutLabel">آخر تمرين:</span>
+                        <span id="psLastWorkout" style="font-weight:700;color:var(--primary);">--</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.03);padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.05);">
+                        <span style="opacity:0.7;" data-i18n="currentStreakLabel">سلسلة الالتزام الحالية:</span>
+                        <span id="psCurrentStreak" style="font-weight:700;color:var(--accent);">--</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.03);padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.05);">
+                        <span style="opacity:0.7;" data-i18n="lastWeightLabel">الوزن المسجل الأخير:</span>
+                        <span id="psLastWeight" style="font-weight:700;color:var(--cyan);">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ad Slot 1 - Home Page -->
+            <div class="ad-slot" id="adSlot1"><span class="ad-label">📢 إعلان 1 — يوضع هنا رابط أو كود الإعلان من لوحة الإدارة</span></div>
+
+            <!-- Daily Tips -->
+            <div class="tips-card" id="dailyTipsCard">
+                <h3 data-i18n="dailyTips"><i class="fas fa-lightbulb"></i> نصائح الجيم اليومية</h3>
+                <div id="dailyTipsContainer"></div>
+            </div>
+
+            <!-- Today's motivation quote -->
+            <div id="motivationCard" style="display:block;text-align:center;padding:16px 24px" class="glass-card">
+                <div id="motivationText" style="font-size:17px;font-weight:600;color:var(--accent);line-height:1.6;"></div>
+            </div>
+        </div>
+
+        <!-- Ad Slot 2 - Between Pages -->
+        <div class="ad-slot" id="adSlot2"><span class="ad-label">📢 إعلان 2 — يوضع هنا رابط أو كود الإعلان من لوحة الإدارة</span></div>
+
+        <!-- Schedules Page -->
+        <div class="page" id="schedulesPage">
+        <div class="schedule-tabs">
+            <button class="tab-btn active" data-tab="officialSchedule" id="officialScheduleTab"><span data-i18n="workouts">الجداول الرسمية</span></button>
+        </div>
+
+            <!-- Official Schedules from DB -->
+            <div class="schedule-content active" id="officialSchedule">
+                <div style="margin-bottom:12px;">
+                    <input type="text" id="searchOfficialSchedulesInput" placeholder="🔍 بحث عن الجداول أو العضلات المستهدفة..." data-i18n-placeholder="searchSchedulesPlaceholder" oninput="window.filterOfficialSchedules()" style="width:100%;padding:12px 16px;background:rgba(255,255,255,0.05);border:2px solid rgba(255,255,255,0.1);border-radius:12px;color:#fff;font-size:14px;font-family:inherit;">
+                </div>
+                <div id="officialScheduleList">
+                    <div class="empty-state"><i class="fas fa-spinner fa-spin"></i> <span data-i18n="loading">جاري تحميل الجداول...</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Page -->
+        <div class="page" id="progressPage">
+            <div class="glass-card">
+                <h3 style="color:var(--accent);margin-bottom:14px" data-i18n="trackProgress"><i class="fas fa-chart-line"></i> تتبع تقدمي</h3>
+                <p style="color:rgba(255,255,255,0.5);font-size:13px;margin-bottom:14px" data-i18n="takePhotoDesc">التقط صورة الآن وشوف تقدمك مع الوقت</p>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+                    <button class="btn-primary" id="addPhotoBtn" data-i18n="addPhotoBtn"><i class="fas fa-camera"></i> إضافة صورة تقدم</button>
+                    <button class="btn-secondary btn-small" id="addPhotoNoteBtn" onclick="showPhotoNoteInput()" style="padding:10px 16px;font-size:12px;"><i class="fas fa-sticky-note"></i> إضافة ملاحظة</button>
+                </div>
+                <div id="photoNoteSection" style="display:none;margin-bottom:10px;">
+                    <textarea id="photoNoteInput" rows="2" style="width:100%;padding:10px;background:rgba(255,255,255,0.05);border:1px solid var(--line);border-radius:10px;color:#fff;font-family:inherit;font-size:13px;resize:vertical;" data-i18n-placeholder="photoNotePlaceholder"></textarea>
+                    <button class="btn-primary btn-small" onclick="addPhotoWithNote()" style="margin-top:6px;padding:8px 16px;font-size:12px;" data-i18n="saveWithNote"><i class="fas fa-check"></i> حفظ مع الملاحظة</button>
+                </div>
+                <input type="file" id="photoInput" accept="image/*" style="display:none">
+            </div>
+            <div class="progress-photo-grid" id="progressPhotosGrid"></div>
+            
+            <!-- Offline Analytics Card -->
+            <div class="glass-card" style="margin-top:20px;">
+                <h3 style="color:var(--accent);margin-bottom:14px;font-size:15px;" data-i18n="offlineAnalyticsTitle"><i class="fas fa-chart-pie"></i> إحصائيات الأداء (أوفلاين)</h3>
+                
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+                    <div style="background:rgba(255,255,255,0.03);padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.05);text-align:center;">
+                        <div style="font-size:11px;opacity:0.6;" data-i18n="totalWorkoutsLabel">إجمالي التمرينات</div>
+                        <div id="analyticsTotalWorkouts" style="font-size:24px;font-weight:900;color:var(--primary);margin-top:6px;">0</div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.03);padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.05);text-align:center;">
+                        <div style="font-size:11px;opacity:0.6;" data-i18n="avgWeightLabel">متوسط الوزن (30 يوم)</div>
+                        <div id="analyticsAvgWeight" style="font-size:24px;font-weight:900;color:var(--cyan);margin-top:6px;">--</div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.03);padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.05);text-align:center;">
+                        <div style="font-size:11px;opacity:0.6;" data-i18n="streakLabel">سلسلة الالتزام</div>
+                        <div id="analyticsStreak" style="font-size:24px;font-weight:900;color:var(--accent);margin-top:6px;">0 يوم</div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.03);padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.05);text-align:center;">
+                        <div style="font-size:11px;opacity:0.6;" data-i18n="topExerciseLabel">الأكثر تكراراً</div>
+                        <div id="analyticsTopExercise" style="font-size:14px;font-weight:700;color:var(--pink);margin-top:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">--</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Page -->
+        <div class="page" id="profilePage">
+            <div class="glass-card">
+                <div class="profile-top-row-user" style="display:flex;gap:20px;align-items:center;">
+                    <div id="userAvatarPreview" style="width:80px;height:80px;border-radius:50%;background:rgba(5,150,105,0.1);border:2px solid rgba(5,150,105,0.2);overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <i class="fas fa-user" style="font-size:30px;color:var(--accent);"></i>
+                    </div>
+                    <div style="flex:1;">
+                        <div id="profileDisplayName" style="font-size:18px;font-weight:700;"></div>
+                        <div id="profileDisplayEmail" style="font-size:clamp(10px,2.5vw,13px);opacity:0.5;"></div>
+                        <div id="profileDisplayRole" style="font-size:11px;margin-top:4px;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="glass-card">
+                <h3 style="color:var(--accent);margin-bottom:14px;font-size:15px;"><i class="fas fa-id-card"></i> <span data-i18n="profileDataTitle">بيانات الحساب</span></h3>
+                <div class="home-stat-row" style="margin-top:0;grid-template-columns:repeat(2,1fr);">
+                    <div class="home-stat" style="color:var(--ink);background:rgba(5,150,105,0.06);">
+                        <div class="label" data-i18n="phone">الهاتف</div>
+                        <div class="value" id="profileDisplayPhone">--</div>
+                    </div>
+                    <div class="home-stat" style="color:var(--ink);background:rgba(255,215,0,0.08);">
+                        <div class="label" data-i18n="age">العمر</div>
+                        <div class="value" id="profileDisplayAge">--</div>
+                    </div>
+                    <div class="home-stat" style="color:var(--ink);background:rgba(14,165,233,0.08);">
+                        <div class="label" data-i18n="subscription">الاشتراك</div>
+                        <div class="value" id="profileDisplaySubscription">--</div>
+                    </div>
+                    <div class="home-stat" style="color:var(--ink);background:rgba(245,158,11,0.08);">
+                        <div class="label" data-i18n="debtStatus">الحساب</div>
+                        <div class="value" id="profileDisplayDebt">--</div>
+                    </div>
+                </div>
+            </div>
+            <div class="glass-card">
+                <h3 style="color:var(--accent);margin-bottom:14px;font-size:15px;" data-i18n="editProfile"><i class="fas fa-edit"></i> تعديل البيانات</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="field">
+                        <label data-i18n="name"><i class="fas fa-user"></i> الاسم</label>
+                        <input type="text" id="userProfileName" style="width:100%;">
+                    </div>
+                    <div class="field">
+                        <label data-i18n="phone"><i class="fas fa-phone"></i> الهاتف</label>
+                        <input type="tel" id="userProfilePhone" style="width:100%;" placeholder="01xxxxxxxxx" data-i18n-placeholder="phonePlaceholder">
+                    </div>
+                    <div class="field">
+                        <label data-i18n="age"><i class="fas fa-cake-candles"></i> العمر</label>
+                        <input type="number" id="userProfileAge" style="width:100%;" placeholder="مثال: 25" data-i18n-placeholder="agePlaceholder">
+                    </div>
+                    <div class="field">
+                        <label data-i18n="newPassword"><i class="fas fa-lock"></i> كلمة سر جديدة</label>
+                        <input type="text" id="userProfilePassword" placeholder="اتركه فارغاً للاحتفاظ بنفس الكلمة" style="width:100%;" data-i18n-placeholder="passwordPlaceholder">
+                    </div>
+                    <div class="field">
+                        <label data-i18n="gender"><i class="fas fa-venus-mars"></i> النوع</label>
+                        <select id="userProfileGender" style="width:100%;padding:13px 16px;background:rgba(255,255,255,0.05);border:2px solid rgba(255,255,255,0.1);border-radius:12px;color:#fff;font-size:14px;font-family:inherit;">
+                            <option value="ذكر" data-i18n-value="male">ذكر</option>
+                            <option value="أنثى" data-i18n-value="female">أنثى</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display:flex;gap:8px;margin-top:12px;">
+                    <button class="btn-primary" onclick="saveUserProfile()" data-i18n="save"><i class="fas fa-save"></i> حفظ</button>
+                    <button class="btn-secondary btn-small" onclick="document.getElementById('userAvatarInput').click()" style="padding:10px 16px;font-size:12px;" data-i18n="changePhoto"><i class="fas fa-camera"></i> تغيير الصورة</button>
+                    <input type="file" id="userAvatarInput" accept="image/*" style="display:none" onchange="uploadUserAvatar(event)">
+                </div>
+                <div id="userProfileStatus" style="margin-top:10px;font-size:12px;color:var(--success);"></div>
+            </div>
+            <!-- Body Measurements -->
+            <div class="glass-card">
+                <h3 style="color:var(--accent);margin-bottom:14px;font-size:15px;" data-i18n="bodyMeasurements"><i class="fas fa-ruler"></i> القياسات الجسمانية</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
+                    <div class="field">
+                        <label data-i18n="heightCm"><i class="fas fa-arrow-up"></i> الطول (سم)</label>
+                        <input type="number" id="bodyHeight" class="tracking-input" placeholder="مثال: 175" step="0.1" data-i18n-placeholder="heightPlaceholder">
+                    </div>
+                    <div class="field">
+                        <label data-i18n="weightKg"><i class="fas fa-weight"></i> الوزن (كجم)</label>
+                        <input type="number" id="bodyWeight" class="tracking-input" placeholder="مثال: 75" step="0.1" data-i18n-placeholder="weightPlaceholder">
+                    </div>
+                    <div class="field">
+                        <label data-i18n="chestCm"><i class="fas fa-arrows-alt-h"></i> الصدر (سم)</label>
+                        <input type="number" id="bodyChest" class="tracking-input" placeholder="سم" step="0.1" data-i18n-placeholder="cm">
+                    </div>
+                    <div class="field">
+                        <label data-i18n="armCm"><i class="fas fa-hand-peace"></i> الذراع (سم)</label>
+                        <input type="number" id="bodyArm" class="tracking-input" placeholder="سم" step="0.1" data-i18n-placeholder="cm">
+                    </div>
+                    <div class="field">
+                        <label data-i18n="waistCm"><i class="fas fa-circle"></i> الخصر (سم)</label>
+                        <input type="number" id="bodyWaist" class="tracking-input" placeholder="سم" step="0.1" data-i18n-placeholder="cm">
+                    </div>
+                    <div class="field">
+                        <label data-i18n="thighCm"><i class="fas fa-arrow-up"></i> الفخذ (سم)</label>
+                        <input type="number" id="bodyThigh" class="tracking-input" placeholder="سم" step="0.1" data-i18n-placeholder="cm">
+                    </div>
+                </div>
+                <div style="display:flex;gap:8px;">
+                    <button class="btn-primary" onclick="saveBodyMeasurements()" style="flex:1;" data-i18n="saveMeasurements"><i class="fas fa-save"></i> حفظ القياسات</button>
+                    <button class="btn-secondary btn-small" onclick="loadBodyMeasurements()" style="padding:10px 16px;font-size:12px;" data-i18n="refresh"><i class="fas fa-sync-alt"></i> تحديث</button>
+                </div>
+                <div id="bodyMeasurementsStatus" style="margin-top:8px;font-size:12px;"></div>
+            </div>
+            <!-- Bottom Nav Zoom Control -->
+            <div class="glass-card">
+                <h3 style="color:var(--accent);margin-bottom:14px;font-size:15px;"><i class="fas fa-arrows-alt-v"></i> تحكم في حجم الشريط السفلي</h3>
+                <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">ظبط حجم أيقونات ونصوص الشريط السفلي من 50% لـ 100%.</p>
+                <div style="display:flex;align-items:center;gap:14px;">
+                    <span style="font-size:12px;opacity:0.6;flex-shrink:0;">50%</span>
+                    <input type="range" id="userZoomSlider" min="50" max="100" value="100" step="5" oninput="applyUserZoom(this.value)" style="flex:1;accent-color:var(--primary);height:6px;cursor:pointer;">
+                    <span style="font-size:12px;opacity:0.6;flex-shrink:0;">100%</span>
+                    <span id="userZoomLabel" style="font-size:14px;font-weight:800;min-width:44px;text-align:center;color:var(--accent);">100%</span>
+                </div>
+            </div>
+            <!-- WhatsApp Contact -->
+            <div class="glass-card" style="text-align:center;">
+                <div style="padding:20px;">
+                    <div style="font-size:40px;margin-bottom:10px;"><i class="fab fa-whatsapp" style="color:#25D366;"></i></div>
+                    <h3 style="font-size:16px;color:#25D366;margin-bottom:4px;" data-i18n="contactDev">تواصل مع المطور</h3>
+                    <p id="userDevNameInProfile" style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:10px;">Samaan Nady</p>
+                    <p style="font-size:12px;color:var(--text-secondary);margin-bottom:16px;line-height:1.6;" data-i18n="contactDesc">للاستفسار عن سعر التطبيق والمميزات تواصل معنا مباشرة عبر واتساب</p>
+                    <a id="profileWhatsAppBtn" href="#" class="btn-primary" style="display:inline-flex;align-items:center;gap:10px;padding:14px 28px;background:#25D366;color:#fff;border-radius:50px;text-decoration:none;font-size:15px;font-weight:700;cursor:pointer;"><i class="fab fa-whatsapp" style="font-size:20px;"></i> واتساب</a>
+                </div>
+            </div>
+            <div class="glass-card" style="text-align:center;">
+                <div style="font-size:11px;opacity:0.4;" id="userProfileFooter">
+                    <i class="fas fa-code"></i> <span id="userProfileFooterName">Samaan Nady</span> — <span id="userProfileFooterPhone"></span>
+                </div>
+            </div>
+            <div style="text-align:center;margin-top:12px;">
+                <button class="logout-btn" id="logoutBtn" data-i18n="logout" style="padding:10px 24px;"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
+            </div>
+        </div>
+
+        <!-- About Page → WhatsApp -->
+        <div class="page" id="aboutPage">
+            <div class="glass-card" style="overflow:hidden;">
+                <div class="captain-profile-layout">
+                    <div class="captain-photo-wrap">
+                        <img id="captainPhoto" alt="Captain profile">
+                    </div>
+                    <div>
+                        <div style="font-size:12px;opacity:0.55;margin-bottom:6px;" data-i18n="aboutCaptain">عن الكابتن</div>
+                        <h2 id="captainName" style="font-size:24px;line-height:1.2;margin-bottom:6px;color:var(--accent);">--</h2>
+                        <div id="captainTitle" style="font-size:14px;opacity:0.8;margin-bottom:10px;">--</div>
+                        <p id="captainBio" style="font-size:13px;line-height:1.8;opacity:0.78;margin:0;">--</p>
+                    </div>
+                </div>
+            </div>
+            <div class="glass-card">
+                <h3 style="color:var(--accent);margin-bottom:14px;font-size:15px;"><i class="fas fa-certificate"></i> الشهادات والخبرة</h3>
+                <div id="captainCertificates" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+            </div>
+            <div class="glass-card">
+                <h3 style="color:var(--accent);margin-bottom:14px;font-size:15px;"><i class="fas fa-phone"></i> بيانات التواصل</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div style="padding:12px 14px;border-radius:14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);">
+                        <div style="font-size:11px;opacity:0.55;margin-bottom:4px;">الاسم</div>
+                        <div id="captainNameSmall" style="font-size:14px;font-weight:800;">--</div>
+                    </div>
+                    <div style="padding:12px 14px;border-radius:14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);">
+                        <div style="font-size:11px;opacity:0.55;margin-bottom:4px;">رقم الهاتف</div>
+                        <div id="captainPhone" style="font-size:14px;font-weight:800;direction:ltr;">--</div>
+                    </div>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">
+                    <a id="captainCallBtn" href="tel:01063353900" class="btn-secondary btn-small" style="padding:10px 16px;font-size:12px;text-decoration:none;"><i class="fas fa-phone"></i> اتصال</a>
+                    <a id="captainWhatsAppBtn" href="#" class="btn-primary btn-small" style="padding:10px 16px;font-size:12px;text-decoration:none;cursor:pointer;"><i class="fab fa-whatsapp"></i> نسخ الرقم</a>
+                </div>
+                <div style="margin-top:12px;font-size:11px;opacity:0.45;" id="captainFooterNote"></div>
+            </div>
+        </div>
+
+        <!-- Tracking Page -->
+        <div class="page" id="trackingPage">
+            <div class="glass-card">
+                <h3 style="color:var(--accent);margin-bottom:14px" data-i18n="weightTracking"><i class="fas fa-weight"></i> تتبع الوزن</h3>
+                <div style="display:flex;gap:10px;margin-bottom:16px">
+                    <input type="number" id="weightInput" class="tracking-input" placeholder="الوزن (كجم)" step="0.1" style="flex:1" data-i18n-placeholder="weightKgLabel">
+                    <button class="btn-premium btn-gold" onclick="logWeight()" data-i18n="log"><i class="fas fa-save"></i> تسجيل</button>
+                </div>
+                <div class="chart-container">
+                    <canvas id="weightChart"></canvas>
+                </div>
+                <div id="weightHistoryList" style="margin-top:12px;max-height:250px;overflow-y:auto;font-size:13px;">
+                    <p style="opacity:0.5;text-align:center;" id="weightHistoryEmpty" data-i18n="noPreviousData">لا توجد قياسات سابقة</p>
+                </div>
+            </div>
+            <div class="glass-card">
+                <h3 style="color:var(--accent);margin-bottom:14px" data-i18n="todayWorkouts"><i class="fas fa-dumbbell"></i> تمارين اليوم</h3>
+                <div id="todayWorkoutsList">
+                    <div class="empty-state"><i class="fas fa-dumbbell"></i><p data-i18n="noTodayWorkouts">لم تسجل أي تمرين اليوم</p></div>
+                </div>
+                <button class="btn-premium btn-gold" onclick="showLogWorkoutModal()" style="margin-top:12px;width:100%" data-i18n="logWorkout"><i class="fas fa-plus-circle"></i> تسجيل تمرين</button>
+                <button class="btn-secondary" onclick="window.showFullWorkoutJournal()" style="margin-top:8px;width:100%;font-size:13px;" data-i18n="fullWorkoutJournalBtn"><i class="fas fa-history"></i> سجل التمارين الكامل</button>
+            </div>
+            <div id="logWorkoutModal" class="modal-overlay">
+                <div class="modal-card">
+                    <h3 style="color:var(--accent);margin-bottom:16px" data-i18n="logWorkout">تسجيل تمرين</h3>
+                    <div style="margin-bottom:12px">
+                        <label style="font-size:13px;color:rgba(255,255,255,0.6);display:block;margin-bottom:6px" data-i18n="exerciseName">اسم التمرين</label>
+                        <input type="text" id="logExName" class="tracking-input" placeholder="مثال: Bench Press" data-i18n-placeholder="exerciseNamePlaceholder">
+                    </div>
+                    <div class="modal-grid-3" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">
+                        <div>
+                            <label style="font-size:13px;color:rgba(255,255,255,0.6);display:block;margin-bottom:6px" data-i18n="sets">مجموعات</label>
+                            <input type="number" id="logExSets" class="tracking-input" value="3" min="1">
+                        </div>
+                        <div>
+                            <label style="font-size:13px;color:rgba(255,255,255,0.6);display:block;margin-bottom:6px" data-i18n="reps">تكرارات</label>
+                            <input type="number" id="logExReps" class="tracking-input" value="10" min="1">
+                        </div>
+                        <div>
+                            <label style="font-size:13px;color:rgba(255,255,255,0.6);display:block;margin-bottom:6px" data-i18n="weight">وزن (كجم)</label>
+                            <input type="number" id="logExWeight" class="tracking-input" value="0" min="0" step="2.5">
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:10px">
+                        <button class="btn-premium btn-gold" onclick="submitWorkoutLog()" style="flex:1" data-i18n="saveWorkout"><i class="fas fa-check"></i> حفظ</button>
+                        <button class="btn-secondary" onclick="document.getElementById('logWorkoutModal').classList.remove('active')" style="flex:1" data-i18n="cancel"><i class="fas fa-times"></i> إلغاء</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Workout Journal Modal -->
+        <div id="workoutJournalModal" class="modal-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9999;align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)this.style.display='none'">
+            <div style="max-width:500px;width:100%;max-height:85vh;background:var(--bg);border-radius:20px;border:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;" onclick="event.stopPropagation()">
+                <div style="padding:16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;">
+                    <h3 style="font-size:16px;font-weight:800;color:var(--accent);" data-i18n="fullWorkoutJournalTitle"><i class="fas fa-history"></i> سجل التمارين الكامل</h3>
+                    <button onclick="document.getElementById('workoutJournalModal').style.display='none'" style="background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;opacity:0.5;"><i class="fas fa-times"></i></button>
+                </div>
+                <div id="workoutJournalList" style="padding:16px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:10px;">
+                </div>
+            </div>
+        </div>
+
+        <!-- Workout Session Modal -->
+        <div id="workoutSessionModal" class="modal-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9999;align-items:center;justify-content:center;overflow-y:auto;padding:16px;">
+            <div style="max-width:500px;width:100%;background:var(--bg);border-radius:20px;border:1px solid var(--line);padding:24px;margin:auto;text-align:center;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                    <div style="font-size:11px;font-weight:600;color:var(--accent);" id="wsProgressLabel">التمرين 1 من 5</div>
+                    <div style="font-size:11px;opacity:0.5;" id="wsProgressPct">0%</div>
+                </div>
+                <div class="ws-progress-track">
+                    <div id="wsProgressBar" class="ws-progress-fill"></div>
+                </div>
+                <div id="wsImageContainer" style="width:100%;aspect-ratio:1;background:rgba(255,255,255,0.02);border-radius:16px;overflow:hidden;margin-bottom:12px;display:flex;align-items:center;justify-content:center;">
+                    <img id="wsExerciseImage" src="" style="width:100%;height:100%;object-fit:contain;" onerror="showExerciseFallback(this)" loading="lazy">
+                </div>
+                <h3 id="wsExerciseName" style="font-size:18px;font-weight:800;margin-bottom:4px;">—</h3>
+                <p id="wsExerciseDetail" style="font-size:13px;opacity:0.6;margin-bottom:8px;">—</p>
+                <p id="wsExerciseDesc" style="font-size:12px;opacity:0.7;margin-bottom:12px;"></p>
+                <!-- Rest Timer Section -->
+                <div id="restTimerSection" style="display:none;background:rgba(5,150,105,0.1);border:1px solid rgba(5,150,105,0.3);border-radius:12px;padding:12px;margin-bottom:12px;">
+                    <div style="font-size:11px;color:var(--accent);font-weight:700;margin-bottom:4px;"><i class="fas fa-stopwatch"></i> <span data-i18n="restTime">وقت الراحة</span></div>
+                    <div id="restTimerDisplay" class="rest-timer-digits">00:00</div>
+                    <div class="rest-timer-ring">
+                        <svg viewBox="0 0 60 60" style="width:80px;height:80px;">
+                            <circle cx="30" cy="30" r="26" fill="none" stroke="rgba(255,215,0,0.1)" stroke-width="3"/>
+                            <circle id="restTimerRing" cx="30" cy="30" r="26" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-dasharray="163.36" stroke-dashoffset="0" transform="rotate(-90 30 30)" style="transition: stroke-dashoffset 1s linear;"/>
+                        </svg>
+                    </div>
+                    <button onclick="window.skipRestTimer()" style="background:none;border:none;color:var(--accent);opacity:0.8;font-size:11px;margin-top:4px;cursor:pointer;text-decoration:underline;" data-i18n="skipRest">تخطي الراحة</button>
+                </div>
+                <div style="display:flex;gap:8px;">
+                    <button id="wsPrevBtn" onclick="wsPrevExercise()" style="display:none;flex:1;padding:10px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,0.05);color:var(--text);font-weight:700;cursor:pointer;font-size:12px;" data-i18n="previous"><i class="fas fa-chevron-right"></i> السابق</button>
+                    <button id="wsNextBtn" onclick="wsNextExercise()" style="flex:1;padding:10px;background:linear-gradient(135deg,var(--primary),var(--cyan));border:none;border-radius:10px;color:#fff;font-weight:700;cursor:pointer;font-size:12px;"><i class="fas fa-check-circle"></i> إنهاء <span id="wsNextLabel" data-i18n="exercise">التمرين</span></button>
+                </div>
+                <button onclick="closeWorkoutSession()" style="width:100%;margin-top:8px;padding:10px;background:none;border:none;color:var(--danger);font-size:12px;cursor:pointer;opacity:0.6;" data-i18n="endSession"><i class="fas fa-times"></i> إنهاء الجلسة</button>
+            </div>
+        </div>
+
+        <!-- Exercise Preview Modal -->
+        <div id="exercisePreviewModal" class="modal-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9999;align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)this.style.display='none'">
+            <div style="max-width:450px;width:100%;background:var(--bg);border-radius:20px;border:1px solid var(--line);padding:24px;text-align:center;" onclick="event.stopPropagation()">
+                <div style="font-size:11px;opacity:0.5;margin-bottom:8px;" id="epProgressLabel">التمرين 1 من 1</div>
+                <div id="epImageContainer" style="width:100%;aspect-ratio:1;background:rgba(255,255,255,0.02);border-radius:16px;overflow:hidden;margin-bottom:12px;display:flex;align-items:center;justify-content:center;">
+                    <img id="epImage" src="" style="width:100%;height:100%;object-fit:contain;" onerror="showExerciseFallback(this)" loading="lazy">
+                </div>
+                <h3 id="epName" style="font-size:18px;font-weight:800;margin-bottom:4px;">—</h3>
+                <p id="epDetail" style="font-size:13px;opacity:0.6;margin-bottom:8px;">—</p>
+                <p id="epDesc" style="font-size:12px;opacity:0.7;margin-bottom:12px;"></p>
+                <div style="display:flex;gap:8px;">
+                    <button id="epPrevBtn" onclick="epPrevExercise()" style="display:none;flex:1;padding:10px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,0.05);color:var(--text);font-weight:700;cursor:pointer;font-size:12px;" data-i18n="previous"><i class="fas fa-chevron-right"></i> السابق</button>
+                    <button id="epNextBtn" onclick="epNextExercise()" style="flex:1;padding:10px;background:linear-gradient(135deg,var(--primary),var(--cyan));border:none;border-radius:10px;color:#fff;font-weight:700;cursor:pointer;font-size:12px;" data-i18n="next"><i class="fas fa-chevron-left"></i> التالي</button>
+                </div>
+                <button class="btn-secondary" onclick="document.getElementById('exercisePreviewModal').style.display='none'" style="padding:8px 20px;font-size:12px;margin-top:8px;" data-i18n="close"><i class="fas fa-times"></i> إغلاق</button>
+            </div>
+        </div>
+
+        <!-- Challenges Page -->
+        <div class="page" id="challengesPage">
+            <div class="challenge-card" id="dailyChallengeCard">
+                <div style="font-size:36px;margin-bottom:10px">🏆</div>
+                <h3 style="color:var(--accent);margin-bottom:8px" id="dailyChallengeTitle" data-i18n="dailyChallenge">التحدي اليومي</h3>
+                <p id="challengeTitle" style="font-size:18px;font-weight:700;margin-bottom:6px">قم بـ 50 تمرين ضغط</p>
+                <p id="challengeDesc" style="font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:16px">أنه التحدي اليومي واكسب نقاط إضافية</p>
+                <button id="completeChallengeBtn" class="btn-premium btn-gold" onclick="completeChallenge()" data-i18n="completeChallenge"><i class="fas fa-check-circle"></i> إكمال التحدي</button>
+                <div id="challengeCompletedMsg" style="display:none;padding:12px;background:rgba(74,222,128,0.15);border:1px solid rgba(74,222,128,0.3);border-radius:12px;color:#4ade80;font-weight:700;font-size:15px;"><i class="fas fa-check-circle"></i> تم إكمال التحدي اليومي! 🎉</div>
+            </div>
+            <div class="glass-card">
+                <h3 style="color:var(--accent);margin-bottom:12px" id="weeklyChallengesTitle" data-i18n="weeklyChallenges"><i class="fas fa-tasks"></i> تحديات الأسبوع</h3>
+                <div id="weeklyChallengesList">
+                    <div class="empty-state"><i class="fas fa-tasks"></i><p data-i18n="noChallenges">لا توجد تحديات أسبوعية حالياً</p></div>
+                </div>
+            </div>
+            <!-- Leaderboard -->
+            <div class="glass-card">
+                <h3 style="color:var(--accent);margin-bottom:12px;font-size:15px;" id="leaderboardTitle" data-i18n="leaderboard"><i class="fas fa-trophy"></i> لوحة المتصدرين 🏆</h3>
+                <div id="leaderboardList" style="font-size:13px;">
+                    <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p data-i18n="loadingLeaderboard">جاري تحميل المتصدرين...</p></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ad Slot 3 - Bottom of Content -->
+        <div class="ad-slot" id="adSlot3"><span class="ad-label">📢 إعلان 3 — يوضع هنا رابط أو كود الإعلان من لوحة الإدارة</span></div>
+
+    </main>
+
+    <!-- User Workout Rating Modal -->
+    <div id="userRatingModal" class="modal-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9999;align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)this.style.display='none'">
+        <div style="max-width:400px;width:100%;background:var(--bg);border-radius:20px;border:1px solid var(--line);padding:24px;text-align:center;" onclick="event.stopPropagation()">
+            <div style="font-size:40px;margin-bottom:8px;">⭐</div>
+            <h3 style="font-size:16px;font-weight:800;margin-bottom:4px;" data-i18n="rateExercise">تقييم التمرين</h3>
+            <p id="userRatingExName" style="font-size:13px;opacity:0.6;margin-bottom:16px;">—</p>
+            <div id="userRatingStars" style="display:flex;gap:8px;justify-content:center;margin-bottom:16px;direction:ltr;"></div>
+            <button onclick="submitUserRating()" class="btn-premium" style="width:100%;padding:12px;font-size:14px;" data-i18n="sendRating"><i class="fas fa-check"></i> إرسال التقييم</button>
+            <button onclick="document.getElementById('userRatingModal').style.display='none'" style="width:100%;margin-top:8px;padding:8px;background:none;border:none;color:var(--text);font-size:12px;cursor:pointer;opacity:0.5;" data-i18n="cancel"><i class="fas fa-times"></i> إلغاء</button>
+        </div>
+    </div>
+
+    <!-- User Session Rating Modal -->
+    <div id="sessionRatingModal" class="modal-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9999;align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this){document.getElementById('sessionRatingModal').style.display='none';}">
+        <div style="max-width:400px;width:100%;background:var(--bg);border-radius:20px;border:1px solid var(--line);padding:24px;text-align:center;" onclick="event.stopPropagation()">
+            <div style="font-size:40px;margin-bottom:8px;">🏋️</div>
+            <h3 style="font-size:16px;font-weight:800;margin-bottom:4px;" data-i18n="sessionRatingTitle">تقييم الحصة التدريبية</h3>
+            <p style="font-size:12px;opacity:0.6;margin-bottom:16px;" data-i18n="sessionRatingDesc">كيف كان تمرينك اليوم؟ قيّم أدائك ودعنا نعرف تعليقك.</p>
+            
+            <!-- Rating Stars (1 to 5) -->
+            <div id="sessionStarsContainer" style="display:flex;gap:10px;justify-content:center;margin-bottom:16px;font-size:28px;cursor:pointer;direction:ltr;">
+                <span onclick="window.setSessionStars(1)" class="session-star" data-value="1" style="color:rgba(255,255,255,0.2); transition:color 0.2s;">★</span>
+                <span onclick="window.setSessionStars(2)" class="session-star" data-value="2" style="color:rgba(255,255,255,0.2); transition:color 0.2s;">★</span>
+                <span onclick="window.setSessionStars(3)" class="session-star" data-value="3" style="color:rgba(255,255,255,0.2); transition:color 0.2s;">★</span>
+                <span onclick="window.setSessionStars(4)" class="session-star" data-value="4" style="color:rgba(255,255,255,0.2); transition:color 0.2s;">★</span>
+                <span onclick="window.setSessionStars(5)" class="session-star" data-value="5" style="color:rgba(255,255,255,0.2); transition:color 0.2s;">★</span>
+            </div>
+            
+            <!-- Note field -->
+            <textarea id="sessionRatingNote" rows="3" placeholder="ملاحظات إضافية (مثال: شعرت بنشاط اليوم، وجع خفيف في الكتف...)" data-i18n-placeholder="sessionRatingNotePlaceholder" style="width:100%;padding:10px;background:rgba(255,255,255,0.05);border:1px solid var(--line);border-radius:10px;color:var(--text);font-family:inherit;font-size:13px;resize:none;margin-bottom:16px;"></textarea>
+            
+            <div style="display:flex;gap:8px;">
+                <button onclick="window.submitSessionRating()" class="btn-premium btn-gold" style="flex:1;padding:12px;font-size:14px;" data-i18n="save"><i class="fas fa-check"></i> حفظ التقييم</button>
+                <button onclick="document.getElementById('sessionRatingModal').style.display='none'" style="padding:12px 16px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#fff;font-size:12px;cursor:pointer;"><i class="fas fa-times"></i> تخطي</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Exercise Picker Modal -->
+    <div id="userExercisePickerModal" class="modal-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9999;align-items:center;justify-content:center;padding:12px;" onclick="if(event.target===this)this.style.display='none'">
+        <div style="max-width:480px;width:100%;max-height:90vh;background:var(--bg);border-radius:20px;border:1px solid var(--line);overflow:hidden;display:flex;flex-direction:column;" onclick="event.stopPropagation()">
+            <div style="padding:16px 16px 8px;border-bottom:1px solid var(--line);">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                    <h3 style="font-size:16px;font-weight:800;" data-i18n="chooseExercise"><i class="fas fa-dumbbell" style="color:var(--accent);"></i> اختر تمرين</h3>
+                    <button onclick="document.getElementById('userExercisePickerModal').style.display='none'" style="background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;opacity:0.5;"><i class="fas fa-times"></i></button>
+                </div>
+                <input type="text" id="userExPickerSearch" placeholder="🔍 بحث عن تمرين..." oninput="window.filterUserExPicker()" style="width:100%;padding:10px 14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-size:13px;font-family:inherit;" data-i18n-placeholder="search">
+            </div>
+            <div style="padding:8px 12px 4px;display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
+                <label style="font-size:12px;font-weight:600;opacity:0.7;" data-i18n="selectCategory"><i class="fas fa-filter"></i> اختر النوع</label>
+                <select id="userExPickerCategorySelect" onchange="window._userExPickerCategory=this.value;renderUserExPickerGrid(window._userExPickerData||[])" style="width:100%;padding:8px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-size:13px;font-family:inherit;">
+                    <option value="">🔰 الكل</option>
+                </select>
+            </div>
+            <div id="userExPickerGrid" style="flex:1;overflow-y:auto;padding:12px;display:grid;gap:10px;">
+                <p style="grid-column:1/-1;text-align:center;opacity:0.5;padding:20px;font-size:13px;"><i class="fas fa-spinner fa-spin"></i> جاري تحميل المكتبة...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Update Required Overlay -->
+    <div id="updateOverlay" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(10,10,15,0.97);backdrop-filter:blur(20px);flex-direction:column;align-items:center;justify-content:center;padding:30px;text-align:center;">
+        <div style="font-size:60px;margin-bottom:20px;"><i class="fas fa-download" style="color:var(--accent);"></i></div>
+        <h2 style="color:var(--accent);font-size:22px;margin-bottom:8px;" data-i18n="updateRequired">تحديث التطبيق مطلوب</h2>
+        <p style="color:rgba(255,255,255,0.6);font-size:13px;margin-bottom:8px;" data-i18n="updateDesc">تم إصدار نسخة جديدة من التطبيق. يرجى التحديث للمتابعة.</p>
+        <p id="updateVersionDisplay" style="color:rgba(255,255,255,0.4);font-size:12px;margin-bottom:4px;"></p>
+        <p id="updateNotesDisplay" style="color:rgba(255,255,255,0.5);font-size:12px;margin-bottom:20px;max-width:300px;line-height:1.6;"></p>
+        <a id="updateDownloadBtn" href="#" target="_blank" class="btn-primary" style="display:inline-flex;align-items:center;gap:10px;padding:16px 36px;color:#fff;border-radius:50px;text-decoration:none;font-size:16px;font-weight:800;">
+            <i class="fas fa-download"></i> <span data-i18n="downloadUpdate">تحميل التحديث</span>
+        </a>
+        <p style="margin-top:16px;font-size:11px;color:rgba(255,255,255,0.3);" data-i18n="updateRequiredNote">لن تتمكن من استخدام التطبيق حتى تقوم بالتحديث</p>
+    </div>
+
+    <div id="desktopUpdateNotice" style="display:none;position:fixed;left:16px;right:16px;bottom:84px;z-index:99990;align-items:center;justify-content:space-between;gap:14px;padding:14px 16px;border-radius:16px;background:rgba(15,18,28,0.92);border:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(16px);box-shadow:0 14px 40px rgba(0,0,0,0.28);color:#fff;">
+        <div style="min-width:0;">
+            <div style="font-size:12px;font-weight:800;color:var(--accent);margin-bottom:3px;" data-i18n="updateRequired">تحديث التطبيق مطلوب</div>
+            <div class="desktop-update-desc" style="font-size:11px;opacity:0.75;line-height:1.5;">تم إصدار نسخة جديدة من التطبيق</div>
+        </div>
+        <div style="flex:0 0 auto;text-align:end;">
+            <div style="font-size:11px;opacity:0.55;margin-bottom:2px;">الإصدار الجديد</div>
+            <div class="desktop-update-version" style="font-size:14px;font-weight:900;letter-spacing:0.2px;">-</div>
+        </div>
+    </div>
+
+    <!-- Bottom Mobile Nav -->
+    <nav class="bottom-nav">
+        <button class="nav-item active" data-page="home"><i class="fas fa-home"></i><span id="homeTabBtn" data-i18n="home">الرئيسية</span></button>
+        <button class="nav-item" data-page="schedules"><i class="fas fa-calendar-alt"></i><span id="schedulesTabBtn" data-i18n="schedules">الجداول</span></button>
+        <button class="nav-item" data-page="progress"><i class="fas fa-chart-line"></i><span id="progressTabBtn" data-i18n="progress">تقدمي</span></button>
+        <button class="nav-item" data-page="tracking"><i class="fas fa-weight"></i><span id="trackingTabBtn" data-i18n="tracking">الوزن</span></button>
+        <button class="nav-item" data-page="challenges"><i class="fas fa-trophy"></i><span id="challengesTabBtn" data-i18n="challenges">التحديات</span></button>
+        <button class="nav-item" data-page="profile"><i class="fas fa-user-circle"></i><span id="profileTabBtn" data-i18n="profile">حسابي</span></button>
+        <button class="nav-item" data-page="about"><i class="fas fa-id-card"></i><span id="aboutTabBtnMobile" data-i18n="aboutCaptain">عن الكابتن</span></button>
+    </nav>
+    <div class="page-footer" id="userPageFooter"><span id="userFooterName">Catafast DEV</span> — <a href="tel:01063760246" id="userFooterPhone">01063760246</a></div>
+</div>
+
+<!-- Absolute Full-Screen Offline Lock & Expiration Checkpoint Overlay -->
+<div id="offline-overlay" style="display: none;"></div>
+<script src="app.js?v=2026-06-19-1" defer></script>
+<script>
+// ===== User i18n Dictionary =====
+var userI18n = {
+        home: 'الرئيسية',
+        schedules: 'الجداول',
+        progress: 'تقدمي',
+        tracking: 'الوزن',
+        challenges: 'التحديات',
+        profile: 'حسابي',
+        aboutCaptain: 'عن الكابتن',
+        workouts: 'التمارين',
+        schedule: 'جدولي',
+        tips: 'نصائح',
+        logo: '⚡ Catafast GYM',
+        logout: 'خروج',
+        syncOnline: 'متصل',
+        syncOffline: 'غير متصل',
+        syncing: 'جاري المزامنة...',
+        noConnection: 'لا يوجد اتصال بالإنترنت',
+        allSynced: 'جميع البيانات متزامنة',
+        pendingSync: '{n} مهمة بانتظار المزامنة - اضغط للمزامنة',
+        noInternet: 'لا يوجد اتصال بالإنترنت للمزامنة',
+        syncStatus: 'حالة المزامنة',
+        daysLeft: 'يوم',
+        subscriptionExpiredShort: '⛔ انتهى الاشتراك',
+        expiresInDays: '⚠️ ينتهي خلال {n} يوم',
+        remainingDays: '✅ متبقي {n} يوم من {m}',
+        noNotifs: 'لا توجد إشعارات',
+        noPhotos: 'لا توجد صور بعد. التقط أول صورة!',
+        updateRequired: 'تحديث التطبيق مطلوب',
+        updateDesc: 'تم إصدار نسخة جديدة من التطبيق. يرجى التحديث للمتابعة.',
+        downloadUpdate: 'تحميل التحديث',
+        updateRequiredNote: 'لن تتمكن من استخدام التطبيق حتى تقوم بالتحديث',
+        noSchedule: 'لا يوجد جدول تدريبي بعد',
+        noTips: 'لا توجد نصائح حالياً',
+        noChallenges: 'لا توجد تحديات أسبوعية حالياً',
+        all: '🔰 الكل',
+        loading: 'جاري التحميل...',
+        save: 'حفظ',
+        cancel: 'إلغاء',
+        publish: 'نشر الجدول',
+        publishSchedule: 'نشر الجدول',
+        unpublish: 'إلغاء النشر',
+        pendingApproval: 'في انتظار الموافقة',
+        approved: 'تم النشر',
+        publishBtn: 'نشر',
+        saveSchedule: 'حفظ الجدول',
+        createSchedule: 'إنشاء جدول جديد',
+        addDay: 'إضافة يوم',
+        addExercise: 'إضافة تمرين',
+        searchExercises: '🔍 بحث عن تمرين...',
+        search: '🔍 بحث عن تمرين...',
+        selectCategory: 'اختر النوع',
+        ratingTitle: 'تقييم التمرين',
+        sendRating: 'إرسال التقييم',
+        sessionRatingTitle: 'تقييم الحصة التدريبية',
+        sessionRatingDesc: 'كيف كان تمرينك اليوم؟ قيّم أدائك ودعنا نعرف تعليقك.',
+        sessionRatingNotePlaceholder: 'ملاحظات إضافية (مثال: شعرت بنشاط اليوم، وجع خفيف في الكتف...)',
+        offlineAnalyticsTitle: 'إحصائيات الأداء (أوفلاين)',
+        totalWorkoutsLabel: 'إجمالي التمرينات',
+        avgWeightLabel: 'متوسط الوزن (30 يوم)',
+        streakLabel: 'سلسلة الالتزام',
+        topExerciseLabel: 'الأكثر تكراراً',
+        progressSummaryTitle: 'ملخص الإنجاز',
+        lastWorkoutLabel: 'آخر تمرين:',
+        currentStreakLabel: 'سلسلة الالتزام الحالية:',
+        lastWeightLabel: 'الوزن المسجل الأخير:',
+        dailyChallenge: 'التحدي اليومي',
+        weeklyChallenges: 'تحديات الأسبوع',
+        leaderboard: 'لوحة المتصدرين',
+        weight: 'الوزن',
+        height: 'الطول',
+        bodyMeasurements: 'القياسات الجسدية',
+        editProfile: 'تعديل البيانات',
+        name: 'الاسم',
+        phone: 'الهاتف',
+        age: 'العمر',
+        gender: 'النوع',
+        male: 'ذكر',
+        female: 'أنثى',
+        saveProfile: 'حفظ البيانات',
+        subscriptionEnd: 'نهاية الاشتراك',
+        daysRemaining: 'الأيام المتبقية',
+        themeToggle: 'الوضع المظلم/الفاتح',
+        langToggle: 'تغيير اللغة',
+        email: 'البريد الإلكتروني',
+        password: 'كلمة المرور / الكود الخاص',
+        rememberAccount: 'تذكر حسابي',
+        loginBtn: 'دخول المشترك',
+        loginSubtitle: 'منصة المشتركين الذكية',
+        backLink: '← العودة للصفحة الرئيسية',
+        takePhoto: 'التقاط صورة تقدم',
+        takePhotoDesc: 'التقط صورة الآن وشوف تقدمك مع الوقت',
+        addPhotoBtn: 'إضافة صورة تقدم',
+        saveWithNote: 'حفظ مع الملاحظة',
+        photoNotePlaceholder: 'أضف ملاحظة لهذه الصورة (مثال: زيادة وزن 2 كجم)',
+        changePhoto: 'تغيير الصورة',
+        saveMeasurements: 'حفظ القياسات',
+        refresh: 'تحديث',
+        log: 'تسجيل',
+        logWorkout: 'تسجيل تمرين',
+        saveWorkout: 'حفظ',
+        todayWorkouts: 'تمارين اليوم',
+        noWorkouts: 'لم تسجل أي تمرين اليوم',
+        trackProgress: 'تتبع تقدمي',
+        weightTracking: 'تتبع الوزن',
+        dailyTips: 'نصائح الجيم اليومية',
+        completeChallenge: 'إكمال التحدي',
+        completedChallenge: 'تم إكمال التحدي اليومي! 🎉',
+        markAllRead: 'تحديد الكل كمقروء',
+        chooseExercise: 'اختر تمرين',
+        rateExercise: 'تقييم التمرين',
+        finish: 'إنهاء',
+        previous: 'السابق',
+        next: 'التالي',
+        close: 'إغلاق',
+        endSession: 'إنهاء الجلسة',
+        endSessionConfirm: 'هل تود إقفال الجلسة وتسجيل الحضور مع وقت الخروج؟',
+        alreadyAttendedToday: 'لقد سجلت حضورك اليوم بالفعل',
+        attendanceRecorded: 'تم تسجيل حصة التدريب بنجاح!',
+        workoutComplete: 'تهانينا! أكملت جميع التمارين!',
+        minutes: 'دقيقة',
+        sessionActive: 'تمرين نشط حالياً ⚡',
+        sessionActiveDesc: 'أهلاً بك! لقد بدأت تمرينك اليوم بنجاح. جميع خانات وجداول التمارين مفعلة حالياً.',
+        sessionInactive: 'تمرين مغلق 🔒',
+        sessionInactiveDesc: 'يجب مسح كود QR المحطة النشطة بالصالة الرياضية لبدء جلستك التدريبية اليومية.',
+        resumeLastCode: 'استئناف بآخر كود',
+        enterCode: 'أدخل كود الصالة',
+        codeConfirmed: 'تم تأكيد الكود! تم تفعيل حصتك التدريبية.',
+        invalidCode: 'كود غير صحيح. تأكد من مطابقته لكود الصالة.',
+        qrConfirmed: 'تم تأكيد كود QR! تم تفعيل حصتك التدريبية.',
+        invalidQr: 'رمز غير متطابق. يرجى مسح رمز صالة Catafast GYM الصحيح.',
+        codeExpired: 'انتهت صلاحية الكود المحفوظ',
+        deleted: 'تم الحذف',
+        kg: 'كجم',
+        noPreviousData: 'لا توجد قياسات سابقة',
+        dailyTrainingGate: 'بوابة التدريب اليومية',
+        scanCode: 'مسح الكود',
+        chooseQrImage: 'اختيار صورة QR',
+        openingCamera: 'جاري فتح الكاميرا...',
+        readingQrImage: 'جاري قراءة الصورة...',
+        gymCodeUnavailable: 'كود الصالة غير متاح الآن. اتصل بالإنترنت أو اطلب من الإدارة توليد الكود مرة أخرى.',
+        manualEntry: 'إدخال يدوي',
+        sessionRestored: 'تم استئناف الجلسة بنجاح ✅',
+        alreadyActive: 'الجلسة نشطة بالفعل ⚡',
+        endWorkoutLabel: 'إقفال الجلسة وتسجيل الحضور',
+        enterCodePrompt: 'أدخل كود الصالة الظاهر على شاشة الإدارة:',
+        confirm: 'تأكيد',
+        scannerNotLoaded: 'مكتبة الماسح لم يتم تحميلها بعد، استخدم الإدخال اليدوي',
+        cameraNotAvailable: 'الكاميرا غير متاحة في هذا الجهاز، استخدم الإدخال اليدوي',
+        cameraError: 'تعذر تشغيل الكاميرا، استخدم الإدخال اليدوي',
+        enterValidWeight: 'أدخل وزناً صحيحاً',
+        weightLogged: 'تم تسجيل الوزن:',
+        deleteConfirm: 'هل أنت متأكد من الحذف؟',
+        exercise: 'التمرين',
+        exerciseName: 'اسم التمرين',
+        sets: 'مجموعات',
+        reps: 'تكرارات',
+        weightKg: 'وزن (كجم)',
+        heightCm: 'الطول (سم)',
+        weightKgLabel: 'الوزن (كجم)',
+        chestCm: 'الصدر (سم)',
+        armCm: 'الذراع (سم)',
+        waistCm: 'الخصر (سم)',
+        thighCm: 'الفخذ (سم)',
+        scheduleName: 'اسم الجدول (مثال: جدول التخسيس)',
+        newPassword: 'كلمة سر جديدة',
+        passwordPlaceholder: 'اتركه فارغاً للاحتفاظ بنفس الكلمة',
+        heightPlaceholder: 'مثال: 175',
+        weightPlaceholder: 'مثال: 75',
+        // toast / alert messages
+        redirectAdmin: '⚠️ حسابك إداري. جاري توجيهك إلى لوحة التحكم للمشرفين...',
+        deviceLinked: '❌ هذا الحساب مرتبط بجهاز لاعب آخر!',
+        loginOffline: '⚠️ تم الدخول دون اتصال بالإنترنت (وضع أوفلاين)',
+        loginNoMatch: '❌ لا يوجد اتصال بالإنترنت وليس لديك جلسة سابقة متطابقة.',
+        noInternetNow: '❌ لا يوجد اتصال بالإنترنت حالياً. افتح شبكة البيانات أو الواي فاي أولاً.',
+        connecting: '🔄 جاري الاتصال ومزامنة البيانات...',
+        syncUpdated: '✅ تم تحديث المزامنة بنجاح وإلغاء القفل!',
+        syncFailed: '❌ فشل مزامنة الخادم. تحقق من تفاصيل الخادم.',
+        measurementsSaved: '✅ تم حفظ القياسات',
+        nameRequired: '❌ الاسم مطلوب',
+        passwordMin: '❌ كلمة السر 6 أحرف على الأقل',
+        accountUpdated: '✅ تم تحديث حسابك',
+        photoUpdated: '✅ تم تحديث الصورة',
+        photoLocal: '✅ تم تحديث الصورة محلياً',
+        scheduleNotFound: '❌ لم يتم العثور على الجدول',
+        noExercises: '❌ لا توجد تمارين في هذا اليوم',
+        startingWorkout: '🏋️ بدء التمرين: {n} تمارين',
+        noExercisesErr: '❌ لا توجد تمارين',
+        exerciseAdded: '✅ تم إضافة {name}',
+        selectRating: '❌ اختر تقييماً أولاً',
+        ratingSent: '⭐ تم إرسال تقييم {n}/5',
+        enterScheduleName: '❌ أدخل اسم الجدول',
+        addDayFirst: '❌ أضف يوم تدريبي واحد على الأقل',
+        addExerciseFirst: '❌ أضف تمرين واحد على الأقل',
+        scheduleSaved: '✅ تم حفظ جدولك الخاص!',
+        alreadyPublished: '⚠️ الجدول قيد النشر بالفعل',
+        saveScheduleFirst: '❌ احفظ الجدول أولاً',
+        scheduleEmpty: '❌ الجدول فاضي — أضف تمارين',
+        scheduleSentForPublish: '✅ تم إرسال الجدول للنشر!',
+        scheduleDeleted: '🗑️ تم حذف الجدول الخاص',
+        loginRequired: '❌ يجب تسجيل الدخول',
+        publishCancelled: '✅ تم إلغاء النشر',
+        photoDeleted: '✅ تم حذف الصورة',
+        processingPhoto: '📸 جاري معالجة وضغط الصورة...',
+        photoSaved: '✅ تم حفظ الصورة (الأسبوع {n})',
+        photoFailed: '❌ فشل معالجة الصورة: {msg}',
+        internetRestored: '🔄 استعادة اتصال الإنترنت. جاري مزامنة السجلات المعلقة...',
+        syncCompleted: '🔄 تم مزامنة {n} سجلات بنجاح{m}',
+        pendingRemaining: '، {n} معلقة',
+        enterExerciseName: '❌ أدخل اسم التمرين',
+        exerciseLogged: '✅ تم تسجيل: {name} ({sets}×{reps})',
+        weeklyChallengeComplete: '🎉 مبروك! تم إكمال التحدي الأسبوعي',
+        dailyChallengeComplete: '🎉 مبروك! تم إكمال التحدي اليومي',
+        subscriptionExpired: '⛔ انتهى اشتراكك! يرجى التواصل مع الكابتن لتجديده.',
+        qrRequired: 'ابدأ التمرين مباشرة',
+        startWorkoutFirst: 'ابدأ التمرين أولاً',
+        cancelPublishConfirm: 'هل تريد إلغاء نشر هذا الجدول؟',
+        deletePhotoConfirm: 'حذف هذه الصورة؟',
+        accountBlocked: 'تم حظر حسابك. يرجى التواصل مع الإدارة.',
+        sessionEnded: 'تم إنهاء الجلسة بنجاح',
+        goodbye: 'مع السلامة',
+        contactDev: 'تواصل مع المطور',
+        contactDesc: 'للاستفسار عن سعر التطبيق والمميزات<br>تواصل معنا مباشرة عبر واتساب',
+        whatsappBtn: 'واتساب: 01063760246',
+        newVersion: 'الإصدار الجديد: ',
+        checking: 'جاري التحقق...',
+        serverError: '⚠️ تعذّر الاتصال بالخادم — تحقق من الإنترنت',
+        invalidCredentials: '❌ البريد الإلكتروني أو كلمة المرور غير صحيحة',
+        tryAgain: 'حاول مرة أخرى',
+        adminAccountRedirect: '❗ هذا الحساب خاص بالمشرفين — استخدم تطبيق الأدمن',
+        unexpectedError: 'حدث خطأ غير متوقع',
+        noInternetServer: '⚠️ لا يوجد اتصال بالإنترنت أو مشكلة في الخادم',
+        subscriptionExpiredView: '⛔ انتهت صلاحية اشتراكك — يمكنك عرض التمارين السابقة فقط',
+        syncLockTitle: 'قفل المزامنة الإلزامي 🔒',
+        syncLockDesc: 'لقد مرت أكثر من 48 ساعة دون مزامنة مع الخادم الرئيسي. يرجى الاتصال بالإنترنت فوراً ليقوم التطبيق بمطابقة سجلات حضورك، وتمارينك، ومستحقاتك المالية ثم فتح القفل تلقائياً.',
+        syncLockBtn: 'محاولة المزامنة وفتح القفل',
+        dayAbbrev: 'يوم',
+        expiredTitle: 'انتهى اشتراكك',
+        expiredDesc: 'تواصل مع الإدارة لتجديد الاشتراك لمتابعة التمارين',
+        expiringSoon: 'اشتراكك على وشك الانتهاء',
+        expiringDesc: 'متبقي {n} أيام — جدد اشتراكك قبل انتهائه',
+        debtWarning: 'تنبيه مالي هام (عليك مديونية) ⚠️',
+        debtGreeting: 'أهلاً كابتن {name}',
+        debtBody: '، نود إحاطتك بوجود متبقي مالي مستحق على اشتراكك وقدره {amount} جنيه',
+        debtFooter: 'يرجى مراجعة الكابتن في الاستقبال لتسوية المديونية. بالتوفيق!',
+        changesSaved: '✅ تم حفظ التغييرات',
+        noInternetSchedule: 'لا يوجد اتصال بالإنترنت — سيتم التحميل تلقائياً عند الاتصال',
+        noOfficialSchedules: 'لا توجد جداول رسمية بعد',
+        scheduleLoadError: 'خطأ في تحميل الجداول: ',
+        exerciseOf: 'التمرين {n} من {total}',
+        restSeconds: ' · راحة {n} ث',
+        completePreviousDay: 'أكمل اليوم السابق',
+        startBtn: 'بدء',
+        subscriptionExpiredStart: '⚠️ انتهت صلاحية اشتراكك — جدد اشتراكك لتتمكن من تسجيل التمارين',
+        exported: 'تم التصدير',
+        tasksFailed: 'فشلت بعض المهام ({n} متبقية)',
+        fileReadError: 'فشل قراءة الملف',
+        imageCompressTimeout: 'انتهت مهلة ضغط الصورة',
+        imageLoadFailed: 'فشل تحميل الصورة',
+        reminderTitle: 'تذكير: لم تتمرن اليوم! 🏃‍♂️',
+        reminderBody: 'حان وقت تمرينك اليومي. افتح التطبيق وابدأ الآن.',
+        exportSuccess: 'تم تصدير البيانات بنجاح!',
+        exportFailed: 'فشل تصدير البيانات',
+        importSuccess: 'تم استعادة {n} سجل بنجاح! جاري إعادة التحميل...',
+        invalidFile: 'ملف غير صالح',
+        noJournalData: 'لا يوجد سجل تمارين سابق.',
+        unknownExercise: 'تمرين غير محدد',
+        journalSets: 'مجموعات',
+        journalReps: 'تكرارات',
+        journalKg: 'كجم',
+        errorPrefix: 'خطأ: ',
+        addDayPrompt: 'أضف يوم تدريبي للبدء',
+        dayPrefix: 'اليوم ',
+        draftLabel: 'مسودة',
+        pendingReview: 'قيد المراجعة',
+        cancelPublish: 'إلغاء النشر',
+        publishedLabel: 'منشور',
+        exercisesFallback: 'تمرين',
+        // USER_TIPS
+        tip1: 'التزم بتمارينك وسجل حضورك يومياً — كل جلسة بتقربك من هدفك.',
+        tip2: 'صور التحول كل شهر تظهر فرق ما用心اش تغفل عنه.',
+        tip3: 'النوم 7-8 ساعات أساسي لبناء العضلات زي التمرين نفسه.',
+        tip4: 'اشرب مية كتير — 3 لتر يومياً يحسن أدائك ونشاطك.',
+        tip5: 'سجل حضورك بعد كل تمرين عشان نبقي عارفين التزامك.',
+        tip6: 'لو حاسس بإجهاد، خذ يوم راحة — التعافي جزء من التدريب.',
+        tip7: 'البروتين بعد التمرين مباشرة بيساعد في التعافي العضلي.',
+        tip8: 'الثبات على الجدول أهم من شدة التمرين — استمرارك هو الفرق.',
+        // Achievements
+        achieve1Title: '5 تمارين متتالية',
+        achieve1Desc: 'أنه 5 تمارين مختلفة هذا الأسبوع',
+        achieve2Title: '10,000 خطوة يومياً',
+        achieve2Desc: 'امشِ 10,000 خطوة لمدة 3 أيام',
+        achieve3Title: 'تحدي البلانك',
+        achieve3Desc: 'اجمع 10 دقائق بلانك خلال الأسبوع',
+        achieve4Title: 'نادي 100 تكرار',
+        achieve4Desc: 'أنه 100 تكرار من أي تمرين',
+        achieve5Title: 'المواظبة',
+        achieve5Desc: 'احضر للجيم 4 أيام هذا الأسبوع',
+        achieve6Title: 'الماء',
+        achieve6Desc: 'اشرب 2 لتر ماء كل يوم هذا الأسبوع',
+        achieve7Title: 'التنوع',
+        achieve7Desc: 'جرب 3 تمارين جديدة من المكتبة',
+        achieve8Title: 'التعافي',
+        achieve8Desc: 'خذ 15 دقيقة stretch بعد كل تمرين',
+        // Daily challenges
+        challenge1Title: 'قم بـ 50 تمرين ضغط',
+        challenge1Desc: 'أنه 50 ضغطة اليوم وحسّن قوة صدرك',
+        challenge2Title: 'امشِ 10,000 خطوة',
+        challenge2Desc: 'حافظ على نشاطك طوال اليوم',
+        challenge3Title: 'اشرب 3 لتر ماء',
+        challenge3Desc: 'الترطيب الجيد أساس الأداء الرياضي',
+        challenge4Title: 'تمرين بلانك 3 دقائق',
+        challenge4Desc: 'قوِّ عضلات جذعك بتمرين البلانك',
+        challenge5Title: '20 دقيقة كارديو',
+        challenge5Desc: 'ارفع معدل ضربات قلبك لمدة 20 دقيقة',
+        challenge6Title: '100 تمرين بطن',
+        challenge6Desc: 'وزعهم على مجموعات طول اليوم',
+        challenge7Title: 'لا سكر اليوم',
+        challenge7Desc: 'تحدي الامتناع عن السكريات لمدة 24 ساعة',
+        // New data-i18n keys
+        pageTitle: 'Catafast GYM | تطبيق المشتركين',
+        dailyAttendance: 'حضور يومي',
+        emailPlaceholder: 'yourname',
+        whatsappLabel: 'واتساب',
+        notifications: 'الإشعارات',
+        defaultUserName: 'اسم المشترك',
+        restTime: 'وقت الراحة',
+        skipRest: 'تخطي الراحة',
+        loadingLeaderboard: 'جاري تحميل المتصدرين...',
+        // more UI strings
+        chartNoData: 'سجل وزنك لترى الرسم البياني',
+        chartWeightLabel: 'الوزن (كجم)',
+        chartInsufficientData: 'بيانات غير كافية',
+        noTodayWorkouts: 'لم تسجل أي تمرين اليوم',
+        loadingLibrary: 'جاري تحميل المكتبة...',
+        noLocalExercises: '⚠️ لا توجد تمارين محلية متاحة.',
+        noResults: 'لا توجد نتائج',
+        noLeaderboardData: '📭 لا توجد بيانات متصدرين بعد.\nأكمل التحديات لتظهر في القائمة!',
+        challengesCount: '{n} تحدٍ',
+        challengeOfDay: 'تحدي اليوم',
+        searchSchedulesPlaceholder: '🔍 بحث عن الجداول أو العضلات المستهدفة...',
+        retry: 'إعادة المحاولة',
+        deleteBtn: 'حذف',
+        weekLabel: 'الأسبوع',
+        edit: 'تعديل',
+        userLabel: 'مستخدم',
+        youLabel: 'أنت',
+        complete: 'إكمال',
+        achFirstWorkout: 'أول تمرين',
+        achFirstWorkoutDesc: 'سجل أول تمرين لك',
+        achSevenDayStreak: '7 أيام متتالية',
+        achSevenDayStreakDesc: 'تمرن 7 أيام متتالية',
+        achPhotoPro: 'مصور محترف',
+        achPhotoProDesc: 'ارفع 3 صور تقدم',
+        achWeightLogger: 'مراقب الوزن',
+        achWeightLoggerDesc: 'سجل وزنك 5 مرات',
+        achChallengeMaster: 'بطل التحديات',
+        achChallengeMasterDesc: 'أكمل 3 تحديات يومية',
+        achTenWorkouts: '10 تمارين',
+        achTenWorkoutsDesc: 'سجل 10 تمارين',
+        achWeeklyHero: 'بطل الأسبوع',
+        achWeeklyHeroDesc: 'أكمل تحدياً أسبوعياً',
+        // Phase 2 New Features
+        weeklySummaryTitle: 'ملخص الأسبوع',
+        workoutLabel: 'تمرين',
+        photoLabel: 'صورة',
+        weightChangeLabel: 'تغير الوزن',
+        cm: 'سم',
+        backupRestoreTitle: 'النسخ الاحتياطي (أوفلاين)',
+        backupRestoreDesc: 'قم بحفظ أو استعادة بياناتك المحلية (الجداول، التمارين، القياسات).',
+        exportDataBtn: 'تصدير البيانات',
+        importDataBtn: 'استيراد',
+        featureDisabled: 'هذه الميزة غير متاحة حالياً',
+        profileDataTitle: 'بيانات الحساب',
+        subscription: 'الاشتراك',
+        debtStatus: 'الحساب',
+        fullWorkoutJournalBtn: 'سجل التمارين الكامل',
+        fullWorkoutJournalTitle: 'سجل التمارين الكامل',
+        exerciseNamePlaceholder: 'مثال: Bench Press',
+        // About
+        about: 'عن التطبيق',
+        aboutDesc: 'نظام متكامل لإدارة وتتبع التمارين الرياضية',
+        developer: 'المطور',
+        contact: 'التواصل',
+        version: 'الإصدار',
+        tech: 'التقنية',
+        copyright: 'جميع الحقوق محفوظة © 2026 Catafast GYM',
+        roleAthlete: 'لاعب',
+        roleCaptain: 'كابتن',
+        roleProgrammer: 'مشرف',
+        altProgress: 'صورة تقدم',
+        attendance: 'حضوري'
+};
+window.userI18n = userI18n;
+window.userCurrentTheme = localStorage.getItem('katfast_user_theme') || 'dark';
+
+function applyUserLang() {
+    var dict = userI18n;
+    document.documentElement.lang = 'ar';
+    document.documentElement.dir = 'rtl';
+    document.querySelectorAll('[data-i18n]').forEach(function(el) {
+        var key = el.dataset.i18n;
+        if (dict[key]) {
+            if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') el.placeholder = dict[key];
+            else el.textContent = dict[key];
+        }
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
+        var key = el.dataset.i18nPlaceholder;
+        if (dict[key]) el.placeholder = dict[key];
+    });
+    document.querySelectorAll('[data-i18n-value]').forEach(function(el) {
+        var key = el.dataset.i18nValue;
+        if (dict[key]) el.value = dict[key];
+    });
+    document.querySelectorAll('[data-i18n-title]').forEach(function(el) {
+        var key = el.dataset.i18nTitle;
+        if (dict[key]) el.title = dict[key];
+    });
+}
+window.applyUserLang = applyUserLang;
+
+function applyUserTheme(theme) {
+    window.userCurrentTheme = theme;
+    localStorage.setItem('katfast_user_theme', theme);
+    if (document.body) {
+        document.body.classList.toggle('dark-mode', theme === 'dark');
+        document.body.classList.toggle('light-mode', theme === 'light');
+    }
+    var btn = document.getElementById('userThemeToggle');
+    if (btn) {
+        btn.innerHTML = theme === 'dark' ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
+        btn.title = theme === 'dark' ? 'الوضع النهاري' : 'الوضع الليلي';
+    }
+}
+window.applyUserTheme = applyUserTheme;
+
+function toggleUserTheme() {
+    applyUserTheme(window.userCurrentTheme === 'dark' ? 'light' : 'dark');
+}
+window.toggleUserTheme = toggleUserTheme;
+
+
+
+// Password visibility toggle
+function togglePasswordVis(id, el) {
+    var inp = document.getElementById(id);
+    if (!inp) return;
+    var isPass = inp.type === 'password';
+    inp.type = isPass ? 'text' : 'password';
+    el.innerHTML = isPass ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
+}
+window.togglePasswordVis = togglePasswordVis;
+
+// Remember last account
+document.addEventListener('DOMContentLoaded', function() {
+    var rem = document.getElementById('rememberAccount');
+    var email = document.getElementById('userEmail');
+    if (rem && email) {
+        var saved = localStorage.getItem('katfast_remembered_email');
+        if (saved) {
+            email.value = saved.replace(/@catafast\.com$/i, '');
+            rem.checked = true;
+        }
+        document.getElementById('loginForm').addEventListener('submit', function() {
+            if (rem.checked) localStorage.setItem('katfast_remembered_email', (email.value || '').trim().toLowerCase());
+            else localStorage.removeItem('katfast_remembered_email');
+        });
+    }
+    applyUserTheme(window.userCurrentTheme);
+    applyUserLang();
+});
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', async () => {
+    try {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(reg => reg.unregister()));
+    } catch (e) {}
+  });
+}
+if (window.caches && caches.keys) {
+  window.addEventListener('load', async () => {
+    try {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(key => caches.delete(key)));
+    } catch (e) {}
+  });
+}
+</script>
+<script>
+try { if (window.Capacitor) { Object.defineProperty(navigator, 'userAgent', { get: function() { return 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.144 Mobile Safari/537.36'; } }); } } catch(e) {}
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('keydown', e => { if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) || (e.ctrlKey && e.key === 'U')) e.preventDefault(); });
+if (location.protocol !== 'file:') { console.log = function(){}; console.warn = function(){}; console.error = function(){}; }
+</script>
+</body>
+</html>
