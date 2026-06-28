@@ -209,4 +209,15 @@ app.use((req, res) => {
   res.status(404).type('text').send('Not Found');
 });
 
+app.get('/__debug', (req, res) => {
+  res.json({
+    cwd: process.cwd(),
+    dirname: __dirname,
+    userDir: USER_DIR,
+    files: fs.existsSync(USER_DIR) ? fs.readdirSync(USER_DIR).slice(0, 20) : 'NOT_FOUND',
+    hasIndex: fs.existsSync(path.join(USER_DIR, 'index.html')),
+    node: process.version,
+  });
+});
+
 module.exports = app;
