@@ -66,12 +66,23 @@ app.use((req, res, next) => {
 
 // ======================== HTML Injection Middleware ========================
 app.use((req, res, next) => {
-  if (!req.path.endsWith('.html')) {
+  const isHtmlPath = req.path.endsWith('.html');
+  const isRoot = req.path === '/' || req.path === '';
+  const userPath = req.path.replace(/^\//, '');
+  let filePath;
+  if (isHtmlPath || isRoot) {
+    if (isRoot) {
+      filePath = path.join(USER_DIR, 'index.html');
+    } else {
+      filePath = path.join(USER_DIR, userPath);
+    }
+  } else {
     return next();
   }
-  const filePath = path.join(USER_DIR, req.path.replace(/^\//, ''));
   if (fs.existsSync(filePath)) {
     let html = fs.readFileSync(filePath, 'utf-8');
+    // Strip original SW unregister + cache delete scripts (conflict with our SW)
+    html = html.replace(/<\/script>\s*\n\s*<script>\s*\n\s*if\s*\(\s*['"]serviceWorker['"]\s*in\s*navigator\s*\)[\s\S]*?unregister\(\)[\s\S]*?caches\.delete[\s\S]*?<\/script>/, '');
     const inject = `
 <script>
 (function(){
@@ -200,6 +211,32 @@ self.addEventListener('message', function(e) {
 });
 `;
   res.type('application/javascript').send(sw);
+});
+
+// ======================== GIF LFS Pointer Placeholder ========================
+const LFS_HEADER = 'version https://git-lfs.github.com/spec/v1';
+const PLACEHOLDER_SVG = Buffer.from(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300">' +
+  '<rect width="300" height="300" fill="#1e293b" rx="16"/>' +
+  '<circle cx="150" cy="120" r="50" fill="none" stroke="#059669" stroke-width="6"/>' +
+  '<rect x="90" y="85" width="120" height="10" rx="5" fill="#059669"/>' +
+  '<rect x="90" y="145" width="120" height="10" rx="5" fill="#059669"/>' +
+  '<rect x="75" y="110" width="10" height="60" rx="5" fill="#059669"/>' +
+  '<rect x="215" y="110" width="10" height="60" rx="5" fill="#059669"/>' +
+  '<text x="150" y="210" text-anchor="middle" fill="#94a3b8" font-family="sans-serif" font-size="16">تمرين</text>' +
+  '<text x="150" y="235" text-anchor="middle" fill="#64748b" font-family="sans-serif" font-size="12">غير متوفر حالياً</text>' +
+  '</svg>'
+);
+
+app.use((req, res, next) => {
+  if (!req.path.endsWith('.gif')) return next();
+  const filePath = path.join(USER_DIR, req.path.replace(/^\//, ''));
+  if (!fs.existsSync(filePath)) return next();
+  const firstBytes = fs.readFileSync(filePath, 'utf-8').slice(0, LFS_HEADER.length);
+  if (firstBytes === LFS_HEADER) {
+    return res.type('image/svg+xml').send(PLACEHOLDER_SVG);
+  }
+  next();
 });
 
 // ======================== Static Files ========================
