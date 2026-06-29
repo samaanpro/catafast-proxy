@@ -199,7 +199,14 @@ self.addEventListener('fetch', function(e) {
           caches.open(CACHE_NAME).then(function(c) { c.put(e.request, clone); });
         }
         return resp;
+<<<<<<< HEAD
       }).catch(function() { return new Response('', { status: 503 }); });
+=======
+      }).catch(function() {
+        if (e.request.mode === 'navigate') return caches.match('/');
+        return new Response('', { status: 503 });
+      });
+>>>>>>> 640a95f (Add navigation fallback to SW fetch handler, add app.js to PRECACHE, add GIF caching in CACHE_ALL)
     })
   );
 });
@@ -218,7 +225,11 @@ self.addEventListener('message', function(e) {
       });
     });
     // Cache all exercise GIFs for offline
+<<<<<<< HEAD
     fetch('assets/exercises/exercises_full.js').then(function(r) { return r.text(); }).then(function(t) {
+=======
+    fetch('/assets/exercises/exercises_full.js').then(function(r) { return r.text(); }).then(function(t) {
+>>>>>>> 640a95f (Add navigation fallback to SW fetch handler, add app.js to PRECACHE, add GIF caching in CACHE_ALL)
       var s = t.indexOf('['); var e = t.lastIndexOf(']');
       if (s !== -1 && e !== -1) {
         try {
