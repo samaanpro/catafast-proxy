@@ -98,38 +98,35 @@ app.use((req, res, next) => {
         html = html.substring(0, openIdx) + html.substring(closeIdx + 9);
       }
     }
-    // Inject splash overlay right after <body> (renders immediately, blocks page content)
-    var splashStyle = '<style>#_catafast-sp{position:fixed;inset:0;z-index:999999;background:#0f172a;display:flex;align-items:center;justify-content:center;flex-direction:column;font-family:Cairo,sans-serif;text-align:center;padding:20px}#_catafast-sp ._ci{font-size:64px;margin-bottom:20px}#_catafast-sp h2{color:#fff;margin-bottom:10px}#_catafast-sp p{color:#94a3b8;font-size:14px;margin-bottom:30px;max-width:300px}#_catafast-sp ._cb{background:linear-gradient(135deg,#059669,#34d399);color:#fff;border:none;border-radius:50px;padding:14px 28px;font-size:15px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:10px;transition:transform 0.2s}#_catafast-sp ._cb:hover{transform:scale(1.05)}</style>';
-    var splashDiv = '<div id="_catafast-sp"><div class="_ci">📵</div><h2>يجب تثبيت التطبيق</h2><p>هذا الموقع لا يعمل في المتصفح. برجاء تثبيت التطبيق أولاً عبر الزر أدناه</p><div class="_cb" id="_catafast-ibtn">📥 تثبيت التطبيق</div></div>';
-    html = html.replace('<body>', '<body>\n' + splashStyle + splashDiv);
-    // Inject scripts before </body>
-    var scripts = '\
-<style>#_catafast-ibtn{cursor:pointer}</style>\
-<script>\
-(function(){\
-  var sp=document.getElementById("_catafast-sp");\
-  if(window.matchMedia("(display-mode:standalone)").matches||window.navigator.standalone===true){if(sp){sp.remove()}if("serviceWorker"in navigator){navigator.serviceWorker.register("/service-worker.js").catch(function(){})}return}\
-  var ib=document.getElementById("_catafast-ibtn");if(!ib)return;\
-  var dp=null;\
-  window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();dp=e});\
-  ib.onclick=function(){\
-    if(dp){dp.prompt();dp.userChoice.then(function(){dp=null;if(window.matchMedia("(display-mode:standalone)").matches){var s=document.getElementById("_catafast-sp");if(s)s.remove()}});return}\
-    if(/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream){ib.innerHTML="⬆️  مشاركة ← إضافة للشاشة الرئيسية";ib.style.pointerEvents="none";setTimeout(function(){ib.innerHTML="📥 تثبيت التطبيق";ib.style.pointerEvents="auto"},6000)}\
-  };\
-  if("serviceWorker"in navigator)navigator.serviceWorker.register("/service-worker.js").catch(function(){});\
-  window.addEventListener("appinstalled",function(){setTimeout(function(){var s=document.getElementById("_catafast-sp");if(s)s.remove()},500)});\
-  (function(){\
-    function k(){var sp=document.getElementById("_catafast-sp");if(sp)sp.innerHTML="<div style=\"display:flex;align-items:center;justify-content:center;height:100vh;background:#0f172a;color:#ef4444;font-family:sans-serif;text-align:center;padding:20px\"><div><div style=\"font-size:64px;margin-bottom:20px\">🚫</div><h2 style=\"color:#fff;margin-bottom:10px\">ممنوع فتح أدوات المطور</h2><p style=\"color:#64748b;font-size:14px\">تم إغلاق التطبيق لأسباب أمنية</p></div></div>"}\
-    function d(){try{var e=new Error();if(!e.stack)return;if(/devtools|debugger/i.test(e.stack.toLowerCase()))k()}catch(e){}}\
-    setInterval(d,800);\
-    window.addEventListener("resize",function(){if(window.outerHeight-window.innerHeight>100||window.outerWidth-window.innerWidth>100)k()});\
-    document.addEventListener("contextmenu",function(e){e.preventDefault()});\
-    document.addEventListener("keydown",function(e){if(e.key==="F12"||e.keyCode===123||(e.ctrlKey&&e.shiftKey&&(e.key==="I"||e.key==="J"||e.key==="C"||e.key==="i"||e.key==="j"||e.key==="c"))||(e.ctrlKey&&e.key==="U")||(e.ctrlKey&&e.shiftKey&&e.key==="Delete")){e.preventDefault();e.stopPropagation()}});\
-    if(location.protocol!=="file:"){console.log=function(){};console.warn=function(){};console.error=function(){};console.info=function(){};console.debug=function(){};console.trace=function(){}}\
-  })();\
-})();\
-</script>';
-    html = html.replace('</body>', scripts + '\n</body>');
+    // Inject splash overlay right after <body>
+    var ss = '<style>html,body{overflow:hidden;height:100%}#_catafast-sp{position:fixed;inset:0;z-index:999999;background:#0f172a;display:flex;align-items:center;justify-content:center;flex-direction:column;font-family:Cairo,sans-serif;text-align:center;padding:20px}#_catafast-sp ._ci{font-size:64px;margin-bottom:20px}#_catafast-sp h2{color:#fff;margin-bottom:10px}#_catafast-sp p{color:#94a3b8;font-size:14px;margin-bottom:30px;max-width:300px}#_catafast-sp ._cb{background:linear-gradient(135deg,#059669,#34d399);color:#fff;border:none;border-radius:50px;padding:14px 28px;font-size:15px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:10px;transition:transform 0.2s}#_catafast-sp ._cb:hover{transform:scale(1.05)}</style>';
+    var sd = '<div id="_catafast-sp"><div class="_ci">📵</div><h2>يجب تثبيت التطبيق</h2><p>هذا الموقع لا يعمل في المتصفح. برجاء تثبيت التطبيق أولاً عبر الزر أدناه</p><div class="_cb" id="_catafast-ibtn">📥 تثبيت التطبيق</div></div>';
+    html = html.replace('<body>', '<body>\n' + ss + sd);
+    // Build injection scripts — avoid nested quote issues by using single-quote JS strings
+    var sc = '';
+    sc += '<script>';
+    sc += 'var _sp=document.getElementById("_catafast-sp");';
+    sc += 'if(window.matchMedia("(display-mode:standalone)").matches||window.navigator.standalone===true){if(_sp){_sp.remove()}if("serviceWorker"in navigator){navigator.serviceWorker.register("/service-worker.js").catch(function(){})}}else{';
+    sc += 'var _ib=document.getElementById("_catafast-ibtn");if(_ib){';
+    sc += 'var _dp=null;';
+    sc += 'window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();_dp=e});';
+    sc += '_ib.onclick=function(){';
+    sc += 'if(_dp){_dp.prompt();_dp.userChoice.then(function(){_dp=null;if(window.matchMedia("(display-mode:standalone)").matches){var s=document.getElementById("_catafast-sp");if(s)s.remove()}});return}';
+    sc += 'var _ios=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;';
+    sc += 'if(_ios){_ib.textContent="⬆️ مشاركة ← إضافة للشاشة الرئيسية";_ib.style.pointerEvents="none";setTimeout(function(){_ib.innerHTML="📥 تثبيت التطبيق";_ib.style.pointerEvents="auto"},6000);return}';
+    sc += 'alert("لتثبيت التطبيق:\n1. افتح قائمة المتصفح (⋮)\n2. اختر \\"تثبيت التطبيق\\"\nأو \\"إضافة للشاشة الرئيسية\\"");';
+    sc += '};';
+    sc += 'if("serviceWorker"in navigator)navigator.serviceWorker.register("/service-worker.js").catch(function(){});';
+    sc += 'window.addEventListener("appinstalled",function(){setTimeout(function(){var s=document.getElementById("_catafast-sp");if(s)s.remove()},500)});';
+    sc += '}';
+    // Anti-devtools — always active
+    sc += 'setInterval(function(){try{var e=new Error();if(e.stack&&/devtools|debugger/i.test(e.stack.toLowerCase())){var sp=document.getElementById("_catafast-sp");if(sp)sp.innerHTML="<div style=\'display:flex;align-items:center;justify-content:center;height:100vh;background:#0f172a;color:#ef4444;font-family:sans-serif;text-align:center;padding:20px\'><div><div style=\'font-size:64px;margin-bottom:20px\'>🚫</div><h2 style=\'color:#fff;margin-bottom:10px\'>ممنوع فتح أدوات المطور</h2><p style=\'color:#64748b;font-size:14px\'>تم إغلاق التطبيق لأسباب أمنية</p></div></div>"}}catch(e){}},800);';
+    sc += 'window.addEventListener("resize",function(){if(window.outerHeight-window.innerHeight>100||window.outerWidth-window.innerWidth>100){var sp=document.getElementById("_catafast-sp");if(sp)sp.innerHTML="<div style=\'display:flex;align-items:center;justify-content:center;height:100vh;background:#0f172a;color:#ef4444;font-family:sans-serif;text-align:center;padding:20px\'><div><div style=\'font-size:64px;margin-bottom:20px\'>🚫</div><h2 style=\'color:#fff;margin-bottom:10px\'>ممنوع فتح أدوات المطور</h2><p style=\'color:#64748b;font-size:14px\'>تم إغلاق التطبيق لأسباب أمنية</p></div></div>"}});';
+    sc += 'document.addEventListener("contextmenu",function(e){e.preventDefault()});';
+    sc += 'document.addEventListener("keydown",function(e){if(e.key==="F12"||e.keyCode===123||(e.ctrlKey&&e.shiftKey&&(e.key==="I"||e.key==="J"||e.key==="C"||e.key==="i"||e.key==="j"||e.key==="c"))||(e.ctrlKey&&e.key==="U")||(e.ctrlKey&&e.shiftKey&&e.key==="Delete")){e.preventDefault();e.stopPropagation()}});';
+    sc += 'if(location.protocol!=="file:"){console.log=function(){};console.warn=function(){};console.error=function(){};console.info=function(){};console.debug=function(){};console.trace=function(){}}';
+    sc += '}</script>';
+    html = html.replace('</body>', sc + '\n</body>');
     return res.type('text/html').send(html);
   }
   next();
