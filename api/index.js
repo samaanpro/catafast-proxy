@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const url = require('url');
 
 const app = express();
 function findUserDir() {
@@ -107,7 +108,7 @@ app.use((req, res, next) => {
     sc += '<script>';
     sc += 'var _sp=document.getElementById("_catafast-sp");';
     sc += 'function _fixScroll(){document.documentElement.style.overflow="auto";document.documentElement.style.height="auto";document.body.style.overflow="auto";document.body.style.height="auto"}';
-    sc += 'if(window.matchMedia("(display-mode:standalone)").matches||window.navigator.standalone===true){if(_sp){_sp.remove()}_fixScroll();if("serviceWorker"in navigator){navigator.serviceWorker.register("/service-worker.js").catch(function(){})}}else{';
+    sc += 'if(window.matchMedia("(display-mode:standalone)").matches||window.navigator.standalone===true){if(_sp){_sp.remove()}_fixScroll();if("serviceWorker"in navigator){navigator.serviceWorker.register("/service-worker.js").then(function(r){if(r.active)r.active.postMessage({action:"CACHE_ALL"})}).catch(function(){})}}else{';
     sc += 'var _ib=document.getElementById("_catafast-ibtn");if(_ib){';
     sc += 'var _dp=null;';
     sc += 'var _it=setTimeout(function(){var _p=_sp.querySelector("p");if(_p)_p.textContent="التطبيق مثبت - افتحه من الشاشة الرئيسية";var _c=_sp.querySelector("._ci");if(_c)_c.textContent="📲";var _h2=_sp.querySelector("h2");if(_h2)_h2.textContent="التطبيق مثبت";_ib.style.display="none"},3000);';
@@ -118,7 +119,7 @@ app.use((req, res, next) => {
     sc += 'if(_ios){_ib.textContent="⬆️ مشاركة ← إضافة للشاشة الرئيسية";_ib.style.pointerEvents="none";setTimeout(function(){_ib.innerHTML="📥 تثبيت التطبيق";_ib.style.pointerEvents="auto"},6000);return}';
     sc += 'var _h=_sp.querySelector("p");if(_h){_h.style.cssText="color:#94a3b8;font-size:13px;line-height:1.6;margin-top:20px";_h.textContent="1- افتح قائمة المتصفح (⋮) 2- اختر \\"تثبيت التطبيق\\" 3- اضغط تثبيت"};_ib.style.display="none"';
     sc += '};';
-    sc += 'if("serviceWorker"in navigator)navigator.serviceWorker.register("/service-worker.js").catch(function(){});';
+    sc += 'if("serviceWorker"in navigator)navigator.serviceWorker.register("/service-worker.js").then(function(r){if(r.active)r.active.postMessage({action:"CACHE_ALL"})}).catch(function(){});';
     sc += 'window.addEventListener("appinstalled",function(){setTimeout(function(){var s=document.getElementById("_catafast-sp");if(s)s.remove();_fixScroll()},500)});';
     sc += '}';
     // Anti-devtools — always active
@@ -190,14 +191,14 @@ self.addEventListener('fetch', function(e) {
   if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
   e.respondWith(
     caches.match(e.request).then(function(cached) {
-      var fetched = fetch(e.request).then(function(resp) {
+      if (cached) return cached;
+      return fetch(e.request).then(function(resp) {
         if (resp && resp.status === 200) {
           var clone = resp.clone();
           caches.open(CACHE_NAME).then(function(c) { c.put(e.request, clone); });
         }
         return resp;
-      }).catch(function() { return null; });
-      return cached || fetched;
+      }).catch(function() { return new Response('', { status: 503 }); });
     })
   );
 });
@@ -240,30 +241,56 @@ self.addEventListener('message', function(e) {
   res.type('application/javascript').send(sw);
 });
 
-// ======================== GIF LFS Pointer Placeholder ========================
+// ======================== GIF LFS Restorer ========================
+// Vercel deploys Git LFS pointer files instead of real GIFs.
+// This middleware detects LFS pointers, checks /tmp for a previously
+// restored copy, then falls back to downloading from GitHub's LFS CDN.
 const LFS_HEADER = 'version https://git-lfs.github.com/spec/v1';
-const PLACEHOLDER_SVG = Buffer.from(
-  '<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300">' +
-  '<rect width="300" height="300" fill="#1e293b" rx="16"/>' +
-  '<circle cx="150" cy="120" r="50" fill="none" stroke="#059669" stroke-width="6"/>' +
-  '<rect x="90" y="85" width="120" height="10" rx="5" fill="#059669"/>' +
-  '<rect x="90" y="145" width="120" height="10" rx="5" fill="#059669"/>' +
-  '<rect x="75" y="110" width="10" height="60" rx="5" fill="#059669"/>' +
-  '<rect x="215" y="110" width="10" height="60" rx="5" fill="#059669"/>' +
-  '<text x="150" y="210" text-anchor="middle" fill="#94a3b8" font-family="sans-serif" font-size="16">تمرين</text>' +
-  '<text x="150" y="235" text-anchor="middle" fill="#64748b" font-family="sans-serif" font-size="12">غير متوفر حالياً</text>' +
-  '</svg>'
-);
+const GITHUB_LFS_CDN = 'https://media.githubusercontent.com/media/samaanpro/catafast-proxy/main';
+const TRANSPARENT_GIF = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
+var LFS_CACHE = {}; // In-memory cache keyed by URL path
 
 app.use((req, res, next) => {
   if (!req.path.endsWith('.gif')) return next();
+  // Check in-memory cache first (fast)
+  if (LFS_CACHE[req.path]) {
+    return res.type('image/gif').send(LFS_CACHE[req.path]);
+  }
   const filePath = path.join(USER_DIR, req.path.replace(/^\//, ''));
   if (!fs.existsSync(filePath)) return next();
-  const firstBytes = fs.readFileSync(filePath, 'utf-8').slice(0, LFS_HEADER.length);
-  if (firstBytes === LFS_HEADER) {
-    return res.type('image/svg+xml').send(PLACEHOLDER_SVG);
+  // Quick check if the file is an LFS pointer (first few bytes)
+  const fd = fs.openSync(filePath, 'r');
+  const buf = Buffer.alloc(LFS_HEADER.length);
+  fs.readSync(fd, buf, 0, LFS_HEADER.length, 0);
+  fs.closeSync(fd);
+  const header = buf.toString('utf-8');
+  if (header !== LFS_HEADER) return next(); // Real binary GIF
+  // Check /tmp for previously restored file (persists across invocations on same instance)
+  const tmpPath = path.join('/tmp', req.path.replace(/^\//, ''));
+  if (fs.existsSync(tmpPath)) {
+    var data = fs.readFileSync(tmpPath);
+    LFS_CACHE[req.path] = data;
+    return res.type('image/gif').send(data);
   }
-  next();
+  // Download real file from GitHub LFS CDN
+  var cdnUrl = GITHUB_LFS_CDN + req.path;
+  var protocol = url.parse(cdnUrl).protocol === 'https:' ? require('https') : require('http');
+  protocol.get(cdnUrl, function(cdnRes) {
+    if (cdnRes.statusCode === 200) {
+      var chunks = [];
+      cdnRes.on('data', function(c) { chunks.push(c); });
+      cdnRes.on('end', function() {
+        var realBuf = Buffer.concat(chunks);
+        LFS_CACHE[req.path] = realBuf;
+        try { fs.writeFileSync(tmpPath, realBuf); } catch (_) {}
+        res.type('image/gif').send(realBuf);
+      });
+    } else {
+      res.type('image/gif').send(TRANSPARENT_GIF);
+    }
+  }).on('error', function() {
+    res.type('image/gif').send(TRANSPARENT_GIF);
+  });
 });
 
 // ======================== Static Files ========================
