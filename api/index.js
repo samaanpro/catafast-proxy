@@ -42,11 +42,12 @@ app.use((req, res, next) => {
 // ======================== JS Obfuscation Middleware ========================
 function obfuscate(code) {
   const key = OBFUSCATION_KEY;
-  let xored = '';
-  for (let i = 0; i < code.length; i++) {
-    xored += String.fromCharCode(code.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+  const buf = Buffer.from(code, 'utf-8');
+  const xored = Buffer.alloc(buf.length);
+  for (let i = 0; i < buf.length; i++) {
+    xored[i] = buf[i] ^ key.charCodeAt(i % key.length);
   }
-  return Buffer.from(xored, 'latin1').toString('base64');
+  return xored.toString('base64');
 }
 
 app.use((req, res, next) => {
@@ -58,7 +59,7 @@ app.use((req, res, next) => {
     const code = fs.readFileSync(filePath, 'utf-8');
     const encoded = obfuscate(code);
     const key = OBFUSCATION_KEY;
-    const wrapper = `(function(){var _k="${key}";var _b=atob("${encoded}");var _d='';for(var _i=0;_i<_b.length;_i++){_d+=String.fromCharCode(_b.charCodeAt(_i)^_k.charCodeAt(_i%_k.length));}try{eval(_d)}catch(e){console.error(e)}})();`;
+    const wrapper = `(function(){var _k="${key}";var _b=atob("${encoded}");var _o=new Uint8Array(_b.length);for(var _i=0;_i<_b.length;_i++){_o[_i]=_b.charCodeAt(_i)^_k.charCodeAt(_i%_k.length);}try{eval(new TextDecoder().decode(_o))}catch(e){console.error(e)}})();`;
     return res.type('application/javascript').send(wrapper);
   }
   next();
@@ -83,17 +84,37 @@ app.use((req, res, next) => {
     let html = fs.readFileSync(filePath, 'utf-8');
     // Strip original SW unregister + cache delete scripts (conflict with our SW)
     html = html.replace(/<\/script>\s*\n\s*<script>\s*\n\s*if\s*\(\s*['"]serviceWorker['"]\s*in\s*navigator\s*\)[\s\S]*?unregister\(\)[\s\S]*?caches\.delete[\s\S]*?<\/script>/, '');
+    // Replace document.write for supabase CDN fallback with proper script injection
+    html = html.replace(/document\.write\s*\(\s*['"]<script src=['"]https:\/\/cdn\.jsdelivr\.net\/npm\/@supabase\/supabase-js@2['"][^>]*><\\?\/script>['"]\s*\)/,
+      'var s=document.createElement("script");s.src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";document.head.appendChild(s)');
     const inject = `
 <script>
 (function(){
+  var deferredPrompt=null;
+  window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferredPrompt=e;});
   var swBtn=document.createElement('div');
   swBtn.id='catafast-offline-btn';
-  swBtn.innerHTML='<i class="fas fa-download"></i> تخزين للاستخدام بدون نت';
+  swBtn.innerHTML='<i class="fas fa-download"></i> تثبيت التطبيق على الجهاز';
   swBtn.style.cssText='position:fixed;bottom:90px;left:16px;z-index:9999;background:linear-gradient(135deg,#059669,#34d399);color:#fff;border:none;border-radius:50px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(5,150,105,0.4);display:flex;align-items:center;gap:8px;font-family:Cairo,sans-serif;transition:transform 0.2s ease,opacity 0.2s ease;';
   swBtn.onmouseenter=function(){this.style.transform='scale(1.05)';};
   swBtn.onmouseleave=function(){this.style.transform='scale(1)';};
   swBtn.onclick=function(){
     var self=this;
+    if(deferredPrompt){
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(function(){deferredPrompt=null;});
+      return;
+    }
+    var isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
+    if(isIOS){
+      self.innerHTML='<i class="fas fa-share"></i> اضغط مشاركة ← إضافة للشاشة الرئيسية';
+      self.style.pointerEvents='none';
+      setTimeout(function(){
+        self.innerHTML='<i class="fas fa-download"></i> تثبيت التطبيق على الجهاز';
+        self.style.pointerEvents='auto';
+      },6000);
+      return;
+    }
     self.innerHTML='<i class="fas fa-spinner fa-spin"></i> جاري التخزين...';
     self.style.pointerEvents='none';
     if(navigator.serviceWorker&&navigator.serviceWorker.controller){
@@ -106,10 +127,10 @@ app.use((req, res, next) => {
     });
     urls=urls.filter(function(v,i,a){return a.indexOf(v)===i;});
     Promise.all(urls.map(function(u){return fetch(u,{cache:'force-cache'}).then(function(r){if(!r.ok)throw Error();return r}).catch(function(){return null})})).then(function(){
-      self.innerHTML='<i class="fas fa-check-circle"></i> تم التخزين للاستخدام بدون نت ✓';
+      self.innerHTML='<i class="fas fa-check-circle"></i> تم التخزين ✓';
       self.style.background='linear-gradient(135deg,#22c55e,#4ade80)';
       setTimeout(function(){
-        self.innerHTML='<i class="fas fa-download"></i> تخزين للاستخدام بدون نت';
+        self.innerHTML='<i class="fas fa-download"></i> تثبيت التطبيق على الجهاز';
         self.style.background='';
         self.style.pointerEvents='auto';
       },4000);
@@ -179,6 +200,23 @@ self.addEventListener('activate', function(e) {
 
 self.addEventListener('fetch', function(e) {
   if (e.request.method !== 'GET') return;
+  var url = new URL(e.request.url);
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
+  var isJS = url.pathname.endsWith('.js') || url.pathname.endsWith('.js?v=');
+  if (isJS) {
+    e.respondWith(
+      fetch(e.request).then(function(resp) {
+        if (resp && resp.status === 200) return resp;
+        return new Response('', { status: 503, statusText: 'Offline' });
+      }).catch(function() {
+        return new Response(
+          'document.body.innerHTML=\'<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0f172a;color:#94a3b8;font-family:sans-serif;text-align:center;padding:20px"><div><div style="font-size:64px;margin-bottom:20px">📡</div><h2 style="color:#fff;margin-bottom:10px">يتطلب اتصال بالإنترنت</h2><p style="color:#64748b;font-size:14px">هذا التطبيق لا يعمل بدون نت لحماية البيانات</p></div></div>\';',
+          { status: 503, headers: { 'Content-Type': 'text/html;charset=utf-8' } }
+        );
+      })
+    );
+    return;
+  }
   e.respondWith(
     caches.match(e.request).then(function(cached) {
       var fetched = fetch(e.request).then(function(resp) {
