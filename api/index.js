@@ -82,35 +82,50 @@ app.use((req, res, next) => {
   }
   if (fs.existsSync(filePath)) {
     let html = fs.readFileSync(filePath, 'utf-8');
-    // Strip original SW unregister + cache delete scripts (conflict with our SW)
-    html = html.replace(/<\/script>\s*\n\s*<script>\s*\n\s*if\s*\(\s*['"]serviceWorker['"]\s*in\s*navigator\s*\)[\s\S]*?unregister\(\)[\s\S]*?caches\.delete[\s\S]*?<\/script>/, '');
+    // Strip anti-SW code (unregister + cache delete) — single contiguous script block
+    html = html.replace(/<\/script>\s*<script>\s*if\s*\(\s*['"]serviceWorker['"]\s*in\s*navigator[\s\S]*?unregister\(\)[\s\S]*?caches\.delete[\s\S]*?<\/script>/, '');
     // Replace document.write for supabase CDN fallback with proper script injection
-    html = html.replace(/document\.write\s*\(\s*['"]<script src=['"]https:\/\/cdn\.jsdelivr\.net\/npm\/@supabase\/supabase-js@2['"][^>]*><\\?\/script>['"]\s*\)/,
-      'var s=document.createElement("script");s.src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";document.head.appendChild(s)');
+    html = html.replace(/if\s*\(\s*(?:typeof\s+window\.supabase\s*===\s*['"]undefined['"]|window\.supabase\s*==\s*null)\s*\)\s*\{\s*document\.write\s*\(/,
+      'if(typeof window.supabase==="undefined"){var s=document.createElement("script");s.src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";document.head.appendChild(s);document.write(');
+    // Strip Capacitor UA spoofing + old anti-devtools (same script block)
+    var capIdx = html.indexOf('try { if (window.Capacitor)');
+    if (capIdx !== -1) {
+      var openIdx = html.lastIndexOf('<script>', capIdx);
+      var closeIdx = html.indexOf('</script>', capIdx);
+      if (openIdx !== -1 && closeIdx !== -1) {
+        html = html.substring(0, openIdx) + html.substring(closeIdx + 9);
+      }
+    }
     const inject = `
+<style>
+#catafast-install-btn{position:fixed;bottom:90px;left:16px;z-index:9999;background:linear-gradient(135deg,#059669,#34d399);color:#fff;border:none;border-radius:50px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(5,150,105,0.4);display:flex;align-items:center;gap:8px;font-family:Cairo,sans-serif;transition:transform 0.2s ease,opacity 0.2s ease;user-select:none;-webkit-touch-callout:none}
+#catafast-install-btn:hover{transform:scale(1.05)}
+#catafast-install-btn.hidden{display:none!important}
+</style>
 <script>
 (function(){
+  function isInstalled(){return window.matchMedia('(display-mode:standalone)').matches||window.navigator.standalone===true}
+  function isMobile(){return/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|mobile/.test(navigator.userAgent)}
+  if(isInstalled())return;
+  if(!isMobile())return;
   var deferredPrompt=null;
   window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferredPrompt=e;});
-  var swBtn=document.createElement('div');
-  swBtn.id='catafast-offline-btn';
-  swBtn.innerHTML='<i class="fas fa-download"></i> تثبيت التطبيق على الجهاز';
-  swBtn.style.cssText='position:fixed;bottom:90px;left:16px;z-index:9999;background:linear-gradient(135deg,#059669,#34d399);color:#fff;border:none;border-radius:50px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(5,150,105,0.4);display:flex;align-items:center;gap:8px;font-family:Cairo,sans-serif;transition:transform 0.2s ease,opacity 0.2s ease;';
-  swBtn.onmouseenter=function(){this.style.transform='scale(1.05)';};
-  swBtn.onmouseleave=function(){this.style.transform='scale(1)';};
-  swBtn.onclick=function(){
+  var btn=document.createElement('div');
+  btn.id='catafast-install-btn';
+  btn.innerHTML='<i class="fas fa-download"></i> تثبيت التطبيق';
+  btn.onclick=function(){
     var self=this;
     if(deferredPrompt){
       deferredPrompt.prompt();
-      deferredPrompt.userChoice.then(function(){deferredPrompt=null;});
+      deferredPrompt.userChoice.then(function(){deferredPrompt=null;if(isInstalled())self.classList.add('hidden');});
       return;
     }
     var isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
     if(isIOS){
-      self.innerHTML='<i class="fas fa-share"></i> اضغط مشاركة ← إضافة للشاشة الرئيسية';
+      self.innerHTML='<i class="fas fa-share"></i> مشاركة ← إضافة للشاشة الرئيسية';
       self.style.pointerEvents='none';
       setTimeout(function(){
-        self.innerHTML='<i class="fas fa-download"></i> تثبيت التطبيق على الجهاز';
+        self.innerHTML='<i class="fas fa-download"></i> تثبيت التطبيق';
         self.style.pointerEvents='auto';
       },6000);
       return;
@@ -121,7 +136,7 @@ app.use((req, res, next) => {
       navigator.serviceWorker.controller.postMessage({action:'CACHE_ALL'});
     }
     var urls=[location.href];
-    document.querySelectorAll('[src],[href]').forEach(function(el){
+    [].forEach.call(document.querySelectorAll('[src],[href]'),function(el){
       var u=el.src||el.href;
       if(u&&u.startsWith(location.origin))urls.push(u.split('?')[0]);
     });
@@ -130,16 +145,32 @@ app.use((req, res, next) => {
       self.innerHTML='<i class="fas fa-check-circle"></i> تم التخزين ✓';
       self.style.background='linear-gradient(135deg,#22c55e,#4ade80)';
       setTimeout(function(){
-        self.innerHTML='<i class="fas fa-download"></i> تثبيت التطبيق على الجهاز';
+        self.innerHTML='<i class="fas fa-download"></i> تثبيت التطبيق';
         self.style.background='';
         self.style.pointerEvents='auto';
       },4000);
     });
   };
-  document.body.appendChild(swBtn);
+  document.body.appendChild(btn);
   if('serviceWorker'in navigator){
     navigator.serviceWorker.register('/service-worker.js').catch(function(){});
   }
+  window.addEventListener('appinstalled',function(){btn.classList.add('hidden');});
+})();
+</script>
+<script>
+(function(){
+  function dev(){var e=new Error();if(!e.stack)return;var s=e.stack.toLowerCase();if(/devtools|debugger|chrome\s+dev/i.test(s)||s.match(/\(.*:\d+:\d+\)/g)&&s.match(/\(.*:\d+:\d+\)/g).length>3){document.title='🛑';document.body.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0f172a;color:#ef4444;font-family:sans-serif;text-align:center;padding:20px"><div><div style="font-size:64px;margin-bottom:20px">🚫</div><h2 style="color:#fff;margin-bottom:10px">ممنوع فتح أدوات المطور</h2><p style="color:#64748b;font-size:14px">تم إغلاق التطبيق لأسباب أمنية</p></div></div>'}}
+  setInterval(dev,1e3);
+  document.addEventListener('contextmenu',function(e){e.preventDefault();return false});
+  document.addEventListener('keydown',function(e){
+    if(e.key==='F12'||e.keyCode===123||(e.ctrlKey&&e.shiftKey&&(e.key==='I'||e.key==='J'||e.key==='C'))||(e.ctrlKey&&e.key==='U')||(e.ctrlKey&&e.shiftKey&&e.key==='Delete')){e.preventDefault();e.stopPropagation();return false}
+    if(e.ctrlKey&&e.shiftKey&&e.keyCode===73){e.preventDefault();e.stopPropagation();return false}
+  });
+  document.addEventListener('keyup',function(e){
+    if(e.key==='F12'||e.keyCode===123){e.preventDefault();e.stopPropagation();return false}
+  });
+  if(location.protocol!=='file:'){var c=console.log;console.log=function(){};console.warn=function(){};console.error=function(){};console.info=function(){};console.debug=function(){};console.trace=function(){}}
 })();
 </script>`;
     html = html.replace('</body>', inject + '\n</body>');
