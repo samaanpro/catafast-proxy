@@ -51,7 +51,7 @@ function obfuscate(code) {
 }
 
 app.use((req, res, next) => {
-  if (!req.path.endsWith('.js') || req.path === '/service-worker.js' || req.path.includes('html5-qrcode') || req.path.includes('supabase.umd')) {
+  if (!req.path.endsWith('.js') || req.path === '/service-worker.js' || req.path.includes('html5-qrcode') || req.path.includes('supabase.umd') || req.path.includes('exercises_full')) {
     return next();
   }
   const filePath = path.join(USER_DIR, req.path.replace(/^\//, ''));
@@ -231,6 +231,24 @@ self.addEventListener('message', function(e) {
         fetch(url).then(function(r) { if (r.ok) c.put(url, r); }).catch(function() {});
       });
     });
+    // Cache all exercise GIFs for offline
+    fetch('assets/exercises/exercises_full.js').then(function(r) { return r.text(); }).then(function(t) {
+      var s = t.indexOf('['); var e = t.lastIndexOf(']');
+      if (s !== -1 && e !== -1) {
+        try {
+          var data = JSON.parse(t.substring(s, e + 1));
+          caches.open(CACHE_NAME).then(function(c) {
+            data.forEach(function(item) {
+              if (item.gif_url) {
+                var gif = item.gif_url;
+                if (gif.indexOf('//') === -1) gif = '/' + gif.replace(/^\/+/, '');
+                fetch(gif).then(function(r) { if (r.ok) c.put(gif, r); }).catch(function() {});
+              }
+            });
+          });
+        } catch (_) {}
+      }
+    }).catch(function() {});
     if (e.ports && e.ports[0]) e.ports[0].postMessage({ status: 'caching' });
   }
 });
