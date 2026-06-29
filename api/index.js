@@ -159,21 +159,42 @@ app.get('/manifest.json', (req, res) => {
 
 // ======================== Service Worker Generator ========================
 app.get('/service-worker.js', (req, res) => {
+  // Build complete list of non-GIF assets by scanning the user directory
+  var precacheList = [
+    '/', '/index.html', '/style.css', '/manifest.json', '/app.js',
+    '/assets/fonts/google/fonts.css',
+    '/assets/fonts/fontawesome/all.min.css',
+    '/assets/icons/icon-192.svg',
+    '/assets/icons/icon-512.svg',
+    '/assets/supabase.umd.js',
+    '/assets/lib/html5-qrcode.min.js'
+  ];
+  function scanDir(dir, prefix) {
+    var full = path.join(USER_DIR, dir);
+    if (!fs.existsSync(full)) return;
+    fs.readdirSync(full).forEach(function(item) {
+      var itemPath = path.join(full, item);
+      if (fs.statSync(itemPath).isFile() && !item.endsWith('.gif')) {
+        precacheList.push(prefix + '/' + item);
+      }
+    });
+  }
+  scanDir('assets/img_cap', '/assets/img_cap');
+  scanDir('img_cap', '/img_cap');
+  scanDir('assets/exercises', '/assets/exercises');
+  scanDir('assets/fonts/google', '/assets/fonts/google');
+  scanDir('assets/fonts/webfonts', '/assets/fonts/webfonts');
+  var precacheJSON = JSON.stringify(precacheList);
+
   const sw = `
-var CACHE_NAME = 'catafast-cache-v1';
-var PRECACHE_URLS = [
-  '/', '/index.html', '/style.css', '/manifest.json',
-  '/app.js',
-  '/assets/fonts/google/fonts.css',
-  '/assets/fonts/fontawesome/all.min.css',
-  '/assets/icons/icon-192.svg',
-  '/assets/icons/icon-512.svg'
-];
+var CACHE_NAME = 'catafast-cache-v2';
+var PRECACHE_URLS = ${precacheJSON};
+var TRANSPARENT_GIF = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 
 self.addEventListener('install', function(e) {
   e.waitUntil(
     caches.open(CACHE_NAME).then(function(c) {
-      return c.addAll(PRECACHE_URLS);
+      return c.addAll(PRECACHE_URLS).catch(function() {});
     }).then(function() { self.skipWaiting(); })
   );
 });
@@ -182,7 +203,9 @@ self.addEventListener('activate', function(e) {
   e.waitUntil(
     caches.keys().then(function(ks) {
       return Promise.all(ks.filter(function(k) { return k !== CACHE_NAME; }).map(function(k) { return caches.delete(k); }));
-    }).then(function() { self.clients.claim(); })
+    }).then(function() { self.clients.claim(); }).then(function() {
+      caches.open(CACHE_NAME).then(function(c) { cacheAllAssets(c); });
+    })
   );
 });
 
@@ -199,57 +222,44 @@ self.addEventListener('fetch', function(e) {
           caches.open(CACHE_NAME).then(function(c) { c.put(e.request, clone); });
         }
         return resp;
-<<<<<<< HEAD
-      }).catch(function() { return new Response('', { status: 503 }); });
-=======
       }).catch(function() {
         if (e.request.mode === 'navigate') return caches.match('/');
+        if (url.pathname.endsWith('.gif')) return fetch(TRANSPARENT_GIF);
         return new Response('', { status: 503 });
       });
->>>>>>> 640a95f (Add navigation fallback to SW fetch handler, add app.js to PRECACHE, add GIF caching in CACHE_ALL)
     })
   );
 });
 
+function cacheUrl(c, url) {
+  return fetch(url).then(function(r) { if (r.ok) { c.put(url, r); } }).catch(function() {});
+}
+
+function cacheAllAssets(c) {
+  PRECACHE_URLS.forEach(function(url) { cacheUrl(c, url); });
+  fetch('/assets/exercises/exercises_full.js').then(function(r) { return r.text(); }).then(function(t) {
+    var s = t.indexOf('['); var e = t.lastIndexOf(']');
+    if (s !== -1 && e !== -1) {
+      try {
+        var data = JSON.parse(t.substring(s, e + 1));
+        data.forEach(function(item) {
+          if (item.gif_url) {
+            var gif = item.gif_url;
+            if (gif.indexOf('//') === -1) gif = '/' + gif.replace(/^\/+/, '');
+            cacheUrl(c, gif);
+          }
+        });
+      } catch (_) {}
+    }
+  }).catch(function() {});
+}
+
 self.addEventListener('message', function(e) {
   if (e.data && e.data.action === 'CACHE_ALL') {
-    var toCache = PRECACHE_URLS.slice();
-    self.clients.matchAll().then(function(clients) {
-      clients.forEach(function(client) {
-        client.postMessage({ action: 'COLLECT_URLS' });
-      });
-    });
-    caches.open(CACHE_NAME).then(function(c) {
-      toCache.forEach(function(url) {
-        fetch(url).then(function(r) { if (r.ok) c.put(url, r); }).catch(function() {});
-      });
-    });
-    // Cache all exercise GIFs for offline
-<<<<<<< HEAD
-    fetch('assets/exercises/exercises_full.js').then(function(r) { return r.text(); }).then(function(t) {
-=======
-    fetch('/assets/exercises/exercises_full.js').then(function(r) { return r.text(); }).then(function(t) {
->>>>>>> 640a95f (Add navigation fallback to SW fetch handler, add app.js to PRECACHE, add GIF caching in CACHE_ALL)
-      var s = t.indexOf('['); var e = t.lastIndexOf(']');
-      if (s !== -1 && e !== -1) {
-        try {
-          var data = JSON.parse(t.substring(s, e + 1));
-          caches.open(CACHE_NAME).then(function(c) {
-            data.forEach(function(item) {
-              if (item.gif_url) {
-                var gif = item.gif_url;
-                if (gif.indexOf('//') === -1) gif = '/' + gif.replace(/^\/+/, '');
-                fetch(gif).then(function(r) { if (r.ok) c.put(gif, r); }).catch(function() {});
-              }
-            });
-          });
-        } catch (_) {}
-      }
-    }).catch(function() {});
+    caches.open(CACHE_NAME).then(function(c) { cacheAllAssets(c); });
     if (e.ports && e.ports[0]) e.ports[0].postMessage({ status: 'caching' });
   }
-});
-`;
+});`;
   res.type('application/javascript').send(sw);
 });
 
