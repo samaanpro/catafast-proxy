@@ -82,8 +82,8 @@ app.use((req, res, next) => {
   }
   if (fs.existsSync(filePath)) {
     let html = fs.readFileSync(filePath, 'utf-8');
-    // Strip anti-SW code (unregister + cache delete)
-    html = html.replace(/<\/script>\s*<script>\s*if\s*\(\s*['"]serviceWorker['"]\s*in\s*navigator[\s\S]*?unregister\(\)[\s\S]*?caches\.delete[\s\S]*?<\/script>/, '');
+    // Strip anti-SW code (unregister + cache delete) — keep preceding </script>
+    html = html.replace(/\s*<script>\s*if\s*\(\s*['"]serviceWorker['"]\s*in\s*navigator[\s\S]*?unregister\(\)[\s\S]*?caches\.delete[\s\S]*?<\/script>/, '');
     // Replace entire document.write supabase CDN fallback — replace whole script tag
     html = html.replace(
       /<script>if\s*\(\s*typeof\s+window\.supabase\s*===\s*['"]undefined['"]\s*\)\s*\{\s*document\.write\s*\([^)]*\)\s*;?\s*\}\s*<\/script>/,
