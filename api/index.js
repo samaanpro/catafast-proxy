@@ -114,7 +114,7 @@ app.use((req, res, next) => {
     sc += 'if(_dp){_dp.prompt();_dp.userChoice.then(function(){_dp=null;if(window.matchMedia("(display-mode:standalone)").matches){var s=document.getElementById("_catafast-sp");if(s)s.remove()}});return}';
     sc += 'var _ios=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;';
     sc += 'if(_ios){_ib.textContent="⬆️ مشاركة ← إضافة للشاشة الرئيسية";_ib.style.pointerEvents="none";setTimeout(function(){_ib.innerHTML="📥 تثبيت التطبيق";_ib.style.pointerEvents="auto"},6000);return}';
-    sc += 'alert("لتثبيت التطبيق:\n1. افتح قائمة المتصفح (⋮)\n2. اختر \\"تثبيت التطبيق\\"\nأو \\"إضافة للشاشة الرئيسية\\"");';
+    sc += 'var _h=_sp.querySelector("p");if(_h){_h.id="_catafast-help";_h.style.cssText="color:#94a3b8;font-size:13px;line-height:1.6;margin-top:20px";_h.textContent="1- افتح قائمة المتصفح (⋮) 2- اختر \\"تثبيت التطبيق\\" 3- اضغط تثبيت"}';
     sc += '};';
     sc += 'if("serviceWorker"in navigator)navigator.serviceWorker.register("/service-worker.js").catch(function(){});';
     sc += 'window.addEventListener("appinstalled",function(){setTimeout(function(){var s=document.getElementById("_catafast-sp");if(s)s.remove()},500)});';
