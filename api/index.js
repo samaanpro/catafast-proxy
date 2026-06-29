@@ -106,18 +106,20 @@ app.use((req, res, next) => {
     var sc = '';
     sc += '<script>';
     sc += 'var _sp=document.getElementById("_catafast-sp");';
-    sc += 'if(window.matchMedia("(display-mode:standalone)").matches||window.navigator.standalone===true){if(_sp){_sp.remove()}if("serviceWorker"in navigator){navigator.serviceWorker.register("/service-worker.js").catch(function(){})}}else{';
+    sc += 'function _fixScroll(){document.documentElement.style.overflow="auto";document.documentElement.style.height="auto";document.body.style.overflow="auto";document.body.style.height="auto"}';
+    sc += 'if(window.matchMedia("(display-mode:standalone)").matches||window.navigator.standalone===true){if(_sp){_sp.remove()}_fixScroll();if("serviceWorker"in navigator){navigator.serviceWorker.register("/service-worker.js").catch(function(){})}}else{';
     sc += 'var _ib=document.getElementById("_catafast-ibtn");if(_ib){';
     sc += 'var _dp=null;';
-    sc += 'window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();_dp=e});';
+    sc += 'var _it=setTimeout(function(){var _p=_sp.querySelector("p");if(_p)_p.textContent="التطبيق مثبت - افتحه من الشاشة الرئيسية";var _c=_sp.querySelector("._ci");if(_c)_c.textContent="📲";var _h2=_sp.querySelector("h2");if(_h2)_h2.textContent="التطبيق مثبت";_ib.style.display="none"},3000);';
+    sc += 'window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();_dp=e;clearTimeout(_it)});';
     sc += '_ib.onclick=function(){';
-    sc += 'if(_dp){_dp.prompt();_dp.userChoice.then(function(){_dp=null;if(window.matchMedia("(display-mode:standalone)").matches){var s=document.getElementById("_catafast-sp");if(s)s.remove()}});return}';
+    sc += 'if(_dp){_dp.prompt();_dp.userChoice.then(function(){_dp=null;if(window.matchMedia("(display-mode:standalone)").matches){var s=document.getElementById("_catafast-sp");if(s)s.remove();_fixScroll()}});return}';
     sc += 'var _ios=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;';
     sc += 'if(_ios){_ib.textContent="⬆️ مشاركة ← إضافة للشاشة الرئيسية";_ib.style.pointerEvents="none";setTimeout(function(){_ib.innerHTML="📥 تثبيت التطبيق";_ib.style.pointerEvents="auto"},6000);return}';
-    sc += 'var _h=_sp.querySelector("p");if(_h){_h.id="_catafast-help";_h.style.cssText="color:#94a3b8;font-size:13px;line-height:1.6;margin-top:20px";_h.textContent="1- افتح قائمة المتصفح (⋮) 2- اختر \\"تثبيت التطبيق\\" 3- اضغط تثبيت"}';
+    sc += 'var _h=_sp.querySelector("p");if(_h){_h.style.cssText="color:#94a3b8;font-size:13px;line-height:1.6;margin-top:20px";_h.textContent="1- افتح قائمة المتصفح (⋮) 2- اختر \\"تثبيت التطبيق\\" 3- اضغط تثبيت"};_ib.style.display="none"';
     sc += '};';
     sc += 'if("serviceWorker"in navigator)navigator.serviceWorker.register("/service-worker.js").catch(function(){});';
-    sc += 'window.addEventListener("appinstalled",function(){setTimeout(function(){var s=document.getElementById("_catafast-sp");if(s)s.remove()},500)});';
+    sc += 'window.addEventListener("appinstalled",function(){setTimeout(function(){var s=document.getElementById("_catafast-sp");if(s)s.remove();_fixScroll()},500)});';
     sc += '}';
     // Anti-devtools — always active
     sc += 'setInterval(function(){try{var e=new Error();if(e.stack&&/devtools|debugger/i.test(e.stack.toLowerCase())){var sp=document.getElementById("_catafast-sp");if(sp)sp.innerHTML="<div style=\'display:flex;align-items:center;justify-content:center;height:100vh;background:#0f172a;color:#ef4444;font-family:sans-serif;text-align:center;padding:20px\'><div><div style=\'font-size:64px;margin-bottom:20px\'>🚫</div><h2 style=\'color:#fff;margin-bottom:10px\'>ممنوع فتح أدوات المطور</h2><p style=\'color:#64748b;font-size:14px\'>تم إغلاق التطبيق لأسباب أمنية</p></div></div>"}}catch(e){}},800);';
@@ -186,21 +188,6 @@ self.addEventListener('fetch', function(e) {
   if (e.request.method !== 'GET') return;
   var url = new URL(e.request.url);
   if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
-  var isJS = url.pathname.endsWith('.js') || url.pathname.endsWith('.js?v=');
-  if (isJS) {
-    e.respondWith(
-      fetch(e.request).then(function(resp) {
-        if (resp && resp.status === 200) return resp;
-        return new Response('', { status: 503, statusText: 'Offline' });
-      }).catch(function() {
-        return new Response(
-          'document.body.innerHTML=\'<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0f172a;color:#94a3b8;font-family:sans-serif;text-align:center;padding:20px"><div><div style="font-size:64px;margin-bottom:20px">📡</div><h2 style="color:#fff;margin-bottom:10px">يتطلب اتصال بالإنترنت</h2><p style="color:#64748b;font-size:14px">هذا التطبيق لا يعمل بدون نت لحماية البيانات</p></div></div>\';',
-          { status: 503, headers: { 'Content-Type': 'text/html;charset=utf-8' } }
-        );
-      })
-    );
-    return;
-  }
   e.respondWith(
     caches.match(e.request).then(function(cached) {
       var fetched = fetch(e.request).then(function(resp) {
