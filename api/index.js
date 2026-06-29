@@ -98,49 +98,38 @@ app.use((req, res, next) => {
         html = html.substring(0, openIdx) + html.substring(closeIdx + 9);
       }
     }
-    const inject = `
-<style>
-#catafast-install-btn{position:fixed;bottom:100px;left:16px;z-index:99999;background:linear-gradient(135deg,#059669,#34d399);color:#fff;border:none;border-radius:50px;padding:12px 20px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(5,150,105,0.4);display:flex;align-items:center;gap:8px;font-family:Cairo,sans-serif;transition:transform 0.2s ease,opacity 0.2s ease;user-select:none;-webkit-touch-callout:none;pointer-events:auto}
-#catafast-install-btn:hover{transform:scale(1.05)}
-#catafast-install-btn.hidden{display:none!important}
-</style>
-<script>
-(function(){
-  var isStandalone=window.matchMedia('(display-mode:standalone)').matches||window.navigator.standalone===true;
-  if(isStandalone)return;
-  var defPro=null;
-  window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();defPro=e;});
-  var btn=document.createElement('div');
-  btn.id='catafast-install-btn';
-  btn.innerHTML='<i class="fas fa-download"></i> تثبيت التطبيق';
-  btn.onclick=function(){
-    var s=this;
-    if(defPro){defPro.prompt();defPro.userChoice.then(function(){defPro=null;if(window.matchMedia('(display-mode:standalone)').matches||window.navigator.standalone===true)s.classList.add('hidden');});return}
-    if(/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream){s.innerHTML='<i class="fas fa-share"></i> مشاركة ← إضافة للشاشة الرئيسية';s.style.pointerEvents='none';setTimeout(function(){s.innerHTML='<i class="fas fa-download"></i> تثبيت التطبيق';s.style.pointerEvents='auto';},6000);return}
-    s.innerHTML='<i class="fas fa-spinner fa-spin"></i> جاري التخزين...';s.style.pointerEvents='none';
-    if(navigator.serviceWorker&&navigator.serviceWorker.controller)navigator.serviceWorker.controller.postMessage({action:'CACHE_ALL'});
-    var u=[location.href];[].forEach.call(document.querySelectorAll('[src],[href]'),function(e){var a=e.src||e.href;if(a&&a.startsWith(location.origin))u.push(a.split('?')[0])});
-    u=u.filter(function(v,i,a){return a.indexOf(v)===i});
-    Promise.all(u.map(function(x){return fetch(x,{cache:'force-cache'}).then(function(r){if(!r.ok)throw Error();return r}).catch(function(){return null})})).then(function(){s.innerHTML='<i class="fas fa-check-circle"></i> تم ✓';s.style.background='linear-gradient(135deg,#22c55e,#4ade80)';setTimeout(function(){s.innerHTML='<i class="fas fa-download"></i> تثبيت التطبيق';s.style.background='';s.style.pointerEvents='auto'},4000)});
-  };
-  document.body.appendChild(btn);
-  if('serviceWorker'in navigator)navigator.serviceWorker.register('/service-worker.js').catch(function(){});
-  window.addEventListener('appinstalled',function(){btn.classList.add('hidden')});
-})();
-</script>
-<script>
-(function(){
-  function kill(){document.body.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0f172a;color:#ef4444;font-family:sans-serif;text-align:center;padding:20px"><div><div style="font-size:64px;margin-bottom:20px">🚫</div><h2 style="color:#fff;margin-bottom:10px">ممنوع فتح أدوات المطور</h2><p style="color:#64748b;font-size:14px">تم إغلاق التطبيق لأسباب أمنية</p></div></div>'}
-  function detect(){try{var e=new Error();if(!e.stack)return;var s=e.stack.toLowerCase();if(/devtools|debugger/i.test(s))kill()}catch(e){}}
-  setInterval(detect,800);
-  window.addEventListener('resize',function(){if(window.outerHeight-window.innerHeight>100||window.outerWidth-window.innerWidth>100)kill()});
-  document.addEventListener('contextmenu',function(e){e.preventDefault()});
-  document.addEventListener('keydown',function(e){if(e.key==='F12'||e.keyCode===123||(e.ctrlKey&&e.shiftKey&&(e.key==='I'||e.key==='J'||e.key==='C'||e.key==='i'||e.key==='j'||e.key==='c'))||(e.ctrlKey&&e.key==='U')||(e.ctrlKey&&e.shiftKey&&e.key==='Delete')){e.preventDefault();e.stopPropagation()}});
-  try{Object.defineProperty(document,'onselectstart',{get:function(){return null}})}catch(e){}
-  if(location.protocol!=='file:'){var _c=console.log;console.log=function(){};console.warn=function(){};console.error=function(){};console.info=function(){};console.debug=function(){};console.trace=function(){}}
-})();
-</script>`;
-    html = html.replace('</body>', inject + '\n</body>');
+    // Inject splash overlay right after <body> (renders immediately, blocks page content)
+    var splashStyle = '<style>#_catafast-sp{position:fixed;inset:0;z-index:999999;background:#0f172a;display:flex;align-items:center;justify-content:center;flex-direction:column;font-family:Cairo,sans-serif;text-align:center;padding:20px}#_catafast-sp ._ci{font-size:64px;margin-bottom:20px}#_catafast-sp h2{color:#fff;margin-bottom:10px}#_catafast-sp p{color:#94a3b8;font-size:14px;margin-bottom:30px;max-width:300px}#_catafast-sp ._cb{background:linear-gradient(135deg,#059669,#34d399);color:#fff;border:none;border-radius:50px;padding:14px 28px;font-size:15px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:10px;transition:transform 0.2s}#_catafast-sp ._cb:hover{transform:scale(1.05)}</style>';
+    var splashDiv = '<div id="_catafast-sp"><div class="_ci">📵</div><h2>يجب تثبيت التطبيق</h2><p>هذا الموقع لا يعمل في المتصفح. برجاء تثبيت التطبيق أولاً عبر الزر أدناه</p><div class="_cb" id="_catafast-ibtn">📥 تثبيت التطبيق</div></div>';
+    html = html.replace('<body>', '<body>\n' + splashStyle + splashDiv);
+    // Inject scripts before </body>
+    var scripts = '\
+<style>#_catafast-ibtn{cursor:pointer}</style>\
+<script>\
+(function(){\
+  var sp=document.getElementById("_catafast-sp");\
+  if(window.matchMedia("(display-mode:standalone)").matches||window.navigator.standalone===true){if(sp){sp.remove()}if("serviceWorker"in navigator){navigator.serviceWorker.register("/service-worker.js").catch(function(){})}return}\
+  var ib=document.getElementById("_catafast-ibtn");if(!ib)return;\
+  var dp=null;\
+  window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();dp=e});\
+  ib.onclick=function(){\
+    if(dp){dp.prompt();dp.userChoice.then(function(){dp=null;if(window.matchMedia("(display-mode:standalone)").matches){var s=document.getElementById("_catafast-sp");if(s)s.remove()}});return}\
+    if(/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream){ib.innerHTML="⬆️  مشاركة ← إضافة للشاشة الرئيسية";ib.style.pointerEvents="none";setTimeout(function(){ib.innerHTML="📥 تثبيت التطبيق";ib.style.pointerEvents="auto"},6000)}\
+  };\
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("/service-worker.js").catch(function(){});\
+  window.addEventListener("appinstalled",function(){setTimeout(function(){var s=document.getElementById("_catafast-sp");if(s)s.remove()},500)});\
+  (function(){\
+    function k(){var sp=document.getElementById("_catafast-sp");if(sp)sp.innerHTML="<div style=\"display:flex;align-items:center;justify-content:center;height:100vh;background:#0f172a;color:#ef4444;font-family:sans-serif;text-align:center;padding:20px\"><div><div style=\"font-size:64px;margin-bottom:20px\">🚫</div><h2 style=\"color:#fff;margin-bottom:10px\">ممنوع فتح أدوات المطور</h2><p style=\"color:#64748b;font-size:14px\">تم إغلاق التطبيق لأسباب أمنية</p></div></div>"}\
+    function d(){try{var e=new Error();if(!e.stack)return;if(/devtools|debugger/i.test(e.stack.toLowerCase()))k()}catch(e){}}\
+    setInterval(d,800);\
+    window.addEventListener("resize",function(){if(window.outerHeight-window.innerHeight>100||window.outerWidth-window.innerWidth>100)k()});\
+    document.addEventListener("contextmenu",function(e){e.preventDefault()});\
+    document.addEventListener("keydown",function(e){if(e.key==="F12"||e.keyCode===123||(e.ctrlKey&&e.shiftKey&&(e.key==="I"||e.key==="J"||e.key==="C"||e.key==="i"||e.key==="j"||e.key==="c"))||(e.ctrlKey&&e.key==="U")||(e.ctrlKey&&e.shiftKey&&e.key==="Delete")){e.preventDefault();e.stopPropagation()}});\
+    if(location.protocol!=="file:"){console.log=function(){};console.warn=function(){};console.error=function(){};console.info=function(){};console.debug=function(){};console.trace=function(){}}\
+  })();\
+})();\
+</script>';
+    html = html.replace('</body>', scripts + '\n</body>');
     return res.type('text/html').send(html);
   }
   next();
