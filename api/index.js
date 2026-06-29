@@ -163,6 +163,7 @@ app.get('/service-worker.js', (req, res) => {
 var CACHE_NAME = 'catafast-cache-v1';
 var PRECACHE_URLS = [
   '/', '/index.html', '/style.css', '/manifest.json',
+  '/app.js',
   '/assets/fonts/google/fonts.css',
   '/assets/fonts/fontawesome/all.min.css',
   '/assets/icons/icon-192.svg',
